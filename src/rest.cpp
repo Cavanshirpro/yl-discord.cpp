@@ -177,9 +177,7 @@ task<HttpResponse> RestClient::request_impl(std::shared_ptr<State> state, std::s
 task<Message> RestClient::send_message(MessageRequest request) { return send_impl(state_, std::move(request)); }
 task<Message> RestClient::send_impl(std::shared_ptr<State> state, MessageRequest request) {
     if (request.content.empty()) throw std::invalid_argument("Message content cannot be empty");
-    detail::Json body{{"content", request.content}, {"allowed_mentions", {{"parse", detail::Json::array()}, {"replied_user", false}}}};
-    if (request.reply_to) body["message_reference"] = {{"message_id", request.reply_to->str()}, {"channel_id", request.channel_id.str()}};
-    auto response = co_await request_impl(state, "POST", "/channels/" + request.channel_id.str() + "/messages", body.dump());
+    auto response = co_await request_impl(state, "POST", "/channels/" + request.channel_id.str() + "/messages", detail::message_payload(request));
     co_return detail::parse_message(detail::Json::parse(response.body));
 }
 std::string token_from_env(std::string_view name) {

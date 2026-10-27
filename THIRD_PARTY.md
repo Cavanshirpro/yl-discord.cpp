@@ -6,7 +6,7 @@ commit `42a93679dc4c8c5caf3d3082542f1bfa2438271d`. System/vcpkg/MSYS2 builds
 can use compatible versions >= 1.30.2.
 
 - [Pinned source](https://github.com/chriskohlhoff/asio/tree/42a93679dc4c8c5caf3d3082542f1bfa2438271d)
-- [Asio license](https://github.com/chriskohlhoff/asio/blob/42a93679dc4c8c5caf3d3082542f1bfa2438271d/asio/LICENSE_1_0.txt)
+- [Asio license](third_party/licenses/asio.txt)
 
 Asio remains a separate dependency. Source archives do not bundle it; CMake may
 fetch it into the build tree. Installed packages require its headers separately.

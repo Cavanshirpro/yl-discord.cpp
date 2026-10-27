@@ -31,10 +31,17 @@ endif()
 
 configure_file(include/yl/discord/version.hpp.in generated/yl/discord/version.hpp @ONLY)
 add_library(yl_discord src/client.cpp src/commands.cpp src/models.cpp src/memory_transport.cpp
-    src/curl_engine.cpp src/rest.cpp src/gateway.cpp)
+    src/curl_engine.cpp src/rest.cpp src/gateway.cpp src/protocol.cpp)
 add_library(yl::discord ALIAS yl_discord)
 set_target_properties(yl_discord PROPERTIES EXPORT_NAME discord
     VERSION ${PROJECT_VERSION} SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+if(PROJECT_VERSION_MAJOR EQUAL 0)
+    # Experimental object layouts may change; do not load a new DLL into an old consumer.
+    set_target_properties(yl_discord PROPERTIES SOVERSION "${PROJECT_VERSION}")
+    if(WIN32 AND BUILD_SHARED_LIBS)
+        set_target_properties(yl_discord PROPERTIES RUNTIME_OUTPUT_NAME "yl_discord-${PROJECT_VERSION}")
+    endif()
+endif()
 include(GenerateExportHeader)
 generate_export_header(yl_discord EXPORT_FILE_NAME generated/yl/discord/export.hpp
     EXPORT_MACRO_NAME YL_DISCORD_EXPORT STATIC_DEFINE YL_DISCORD_STATIC_DEFINE)

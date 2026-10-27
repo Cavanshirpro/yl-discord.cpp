@@ -38,12 +38,16 @@ transport. Null custom transport is rejected. Copying is disabled.
 
 Override `task<> on_ready(Ready)`, `on_message(Message)`,
 `on_raw_event(RawEvent)` and `on_error(TaskError)` in subclasses. The first three
-default to no-ops. The default error hook rethrows its exception; if a custom
+default to no-ops. The default error hook logs the source/error to stderr and
+rethrows its exception; if a custom
 hook also throws, its failure is retained rather than recursively reported.
 
 `TaskError` has `source` and `std::exception_ptr exception`. Sources currently
 identify an event hook/listener, `commands`, or the caller-provided spawn label.
 Command-specific error types/labels and listener removal are not implemented.
+In a live session, an unhandled event/command error is logged immediately and
+retained until `run()` drains after shutdown. Override `on_error()` to handle it
+or call `close()` there for fail-fast behavior.
 
 Mutate registries/options before `run()` or on its executor. Only `dispatch()`
 and `stop()` are intended for cross-thread entry. Never call `run()` concurrently

@@ -22,6 +22,10 @@ void validate_token(const std::string& token);
 void validate_url(const std::string& url, bool websocket);
 User parse_user(const Json& data);
 Message parse_message(const Json& data);
+std::string heartbeat_payload(std::optional<std::uint64_t> sequence);
+std::string identify_payload(const std::string& token, Intents intents);
+std::string resume_payload(const std::string& token, const std::string& session, std::uint64_t sequence);
+std::string message_payload(const MessageRequest& request);
 
 class AsyncMutex {
 public:

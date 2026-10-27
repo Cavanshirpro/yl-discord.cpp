@@ -7,6 +7,7 @@
 #include <asio/post.hpp>
 #include <stdexcept>
 #include <utility>
+#include <iostream>
 
 namespace yl::discord {
 namespace {
@@ -180,6 +181,9 @@ task<> Client::on_ready(Ready) { co_return; }
 task<> Client::on_message(Message) { co_return; }
 task<> Client::on_raw_event(RawEvent) { co_return; }
 task<> Client::on_error(TaskError error) {
+    try { std::rethrow_exception(error.exception); }
+    catch (const std::exception& failure) { std::cerr << "yl-discord.cpp " << error.source << ": " << failure.what() << '\n'; }
+    catch (...) { std::cerr << "yl-discord.cpp " << error.source << ": non-standard exception\n"; }
     std::rethrow_exception(error.exception);
     co_return;
 }

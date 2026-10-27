@@ -2,3 +2,5 @@
 *.zip binary
 *.gz binary
 *.png binary
+# Preserve upstream license whitespace verbatim.
+third_party/licenses/*.txt whitespace=-blank-at-eol

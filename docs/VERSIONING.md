@@ -10,8 +10,11 @@ in discussion, not a release tag accepted by the tooling.
 
 Before 1.0 there is no cross-minor API/ABI compatibility promise. The installed
 CMake package uses SameMinorVersion compatibility; patch updates within a minor
-line are intended to remain compatible. Shared library SOVERSION is MAJOR.MINOR.
-No cross-compiler/standard-library ABI compatibility is promised.
+line are intended to remain source-compatible. CMake version selection does not
+promise binary compatibility: pre-1.0 object layouts remain experimental. Shared
+libraries use the full MAJOR.MINOR.PATCH in their soname/DLL runtime name before
+1.0 to prevent accidental loading into an old binary. Rebuild v0.1.0 consumers
+for v0.1.1. No cross-compiler/standard-library ABI compatibility is promised.
 
 `VERSION` is the canonical package version, read by CMake and Conan. CMake generates
 public version constants. `release.json` adds the exact tag and a GitHub

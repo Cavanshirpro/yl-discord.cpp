@@ -21,7 +21,8 @@ Snowflake id(const Json& data) {
 std::string gateway_address(const std::string& url) {
     validate_url(url, true);
     const auto base = url.substr(0, url.find('?'));
-    return base + (base.ends_with('/') ? "" : "/") + "?v=10&encoding=json";
+    const bool has_path = base.find('/', base.find("://") + 3) != std::string::npos;
+    return base + (has_path ? "" : "/") + "?v=10&encoding=json";
 }
 }
 User parse_user(const Json& data) {
@@ -111,10 +112,8 @@ task<> Connection::run(std::string bot_token) {
     }
 }
 task<> Connection::send_heartbeat() {
-    Json value = sequence ? Json(*sequence) : Json(nullptr);
     awaiting_ack = true;
-    const Json payload{{"op", 1}, {"d", value}};
-    co_await socket->write(payload.dump());
+    co_await socket->write(heartbeat_payload(sequence));
 }
 task<> Connection::heartbeat_loop(std::shared_ptr<Connection> self, std::uint64_t epoch, std::chrono::milliseconds interval) {
     auto next = std::chrono::milliseconds{static_cast<std::int64_t>(interval.count() * jitter())};
@@ -162,14 +161,11 @@ task<> Connection::session() {
                 }
             });
             if (resume) {
-                const Json payload{{"op", 6}, {"d", {{"token", token}, {"session_id", session_id}, {"seq", *sequence}}}};
-                co_await socket->write(payload.dump());
+                co_await socket->write(resume_payload(token, session_id, *sequence));
             } else {
                 if (identifies_left == 0) throw ProtocolError("Gateway session start limit exhausted");
                 --identifies_left;
-                const Json payload{{"op", 2}, {"d", {{"token", token}, {"intents", intents.value()},
-                    {"properties", {{"os", "cpp"}, {"browser", "yl-discord.cpp"}, {"device", "yl-discord.cpp"}}}}}};
-                co_await socket->write(payload.dump());
+                co_await socket->write(identify_payload(token, intents));
             }
         } else if (op == 11) {
             awaiting_ack = false;
