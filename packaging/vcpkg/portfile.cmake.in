@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+# Copyright (C) 2026 Cavanshirpro
+# Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
+vcpkg_from_github(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO Cavanshirpro/yl-discord.cpp
+    REF @SOURCE_COMMIT@
+    SHA512 @SOURCE_SHA512@
+    HEAD_REF main
+)
+vcpkg_cmake_configure(SOURCE_PATH "${SOURCE_PATH}" OPTIONS
+    -DYL_DISCORD_BUILD_EXAMPLES=OFF -DYL_DISCORD_BUILD_TESTS=OFF -DYL_DISCORD_FETCH_ASIO=OFF)
+vcpkg_cmake_install()
+vcpkg_cmake_config_fixup(PACKAGE_NAME ylDiscord CONFIG_PATH lib/cmake/ylDiscord)
+vcpkg_fixup_pkgconfig()
+file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include" "${CURRENT_PACKAGES_DIR}/debug/share")
+vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/LICENSE" "${SOURCE_PATH}/COPYING")
+file(INSTALL "${SOURCE_PATH}/NOTICE" "${SOURCE_PATH}/THIRD_PARTY.md"
+    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")

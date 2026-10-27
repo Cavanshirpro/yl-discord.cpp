@@ -1,0 +1,62 @@
+# Roadmap
+
+Future items are plans, not release dates or current capabilities.
+
+## Foundation — v0.1.0
+
+- [x] C++20 coroutines, timers and one event-loop thread.
+- [x] Client/Bot subclasses, async hooks and multiple listeners.
+- [x] Prefix commands, aliases, quoted arguments and Context helpers.
+- [x] Cog ownership and in-flight command removal safety.
+- [x] Raw event ingress and a replaceable message transport.
+- [x] Offline behavior tests and examples.
+- [x] CMake install/export, package recipes and publication workflows.
+
+## Next — live messages
+
+- [ ] Nonblocking TLS HTTP and WebSocket transports.
+- [ ] Bot-token authentication without credentials in logs.
+- [ ] Gateway discovery, API v10, Hello, Identify and Ready.
+- [ ] Heartbeat jitter, ACK tracking and immediate heartbeat responses.
+- [ ] Sequence/session persistence, reconnect/resume and close-code policy.
+- [ ] JSON model conversion with explicit optional/partial fields.
+- [ ] MESSAGE_CREATE → Bot → awaitable reply → REST send.
+- [ ] Server-driven bucket/global limits and 429 waiting.
+- [ ] Timeouts, cancellation, bounded retries and graceful shutdown.
+- [ ] Local HTTP/Gateway fixtures, then an explicitly initiated live test.
+
+Acceptance requires REST waiting without blocking heartbeats, reconnect on
+missing ACK, Resume where possible, no 429 busy loop and no endless invalid-token
+retry. Guild prefix commands will require message content intent in code and in
+the Developer Portal.
+
+## Everyday bot features
+
+- [ ] Slash commands, sync, interaction response/defer/followup.
+- [ ] Buttons, selects, modals and Views.
+- [ ] Guild, channel, member, role and permission APIs.
+- [ ] Embeds, attachments, editing/deletion and reactions.
+- [ ] Typed parameters, converters, checks, cooldowns and generated help.
+- [ ] Cog unloading and managed background tasks.
+
+## Advanced control
+
+- [ ] Cache budgets, opt-out, TTL and eviction policy.
+- [ ] Predicate-based `wait_for<Event>()` with cancellation/deadlines.
+- [ ] Event/command hooks and optional middleware.
+- [ ] REST latency, heartbeat and rate-limit queue metrics.
+- [ ] Low-level REST/Gateway access using the same safeguards.
+- [ ] Sharding, identify coordination, queue bounds and backpressure.
+
+Offline testing already has a working foundation. Event recording/replay,
+typed command signatures, explicit cache budgets and opt-in diagnostics are
+candidates for improving debugging and large-bot operation. Recording needs
+a deliberate policy for credentials, message content and retention.
+
+## Performance evidence
+
+After live transports work, compare equivalent workloads, intents and caches
+against discord.py on the same machine. Measure parse/dispatch throughput,
+command latency p50/p95/p99, CPU, RSS, build time and distribution size. Separate
+network latency and Discord limits from CPU benchmarks. No advantage is claimed
+before measurements exist.

@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+# Copyright (C) 2026 Cavanshirpro
+# Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
+# Maintainer: Cavanshirpro (https://github.com/Cavanshirpro)
+_realname=yl-discord-cpp
+_source_commit=@SOURCE_COMMIT@
+pkgbase=mingw-w64-${_realname}
+pkgname=("${MINGW_PACKAGE_PREFIX}-${_realname}")
+pkgver=@PACKAGE_VERSION@
+pkgrel=1
+pkgdesc="Coroutine-first C++20 Discord bot library, offline foundation (mingw-w64)"
+arch=('any')
+mingw_arch=('mingw64' 'ucrt64')
+url='https://github.com/Cavanshirpro/yl-discord.cpp'
+license=('spdx:LGPL-3.0-or-later')
+depends=("${MINGW_PACKAGE_PREFIX}-gcc-libs" "${MINGW_PACKAGE_PREFIX}-asio")
+makedepends=("${MINGW_PACKAGE_PREFIX}-cc" "${MINGW_PACKAGE_PREFIX}-cmake" "${MINGW_PACKAGE_PREFIX}-ninja")
+options=('!debug')
+source=("${_realname}-${pkgver}.tar.gz::${url}/archive/${_source_commit}.tar.gz")
+sha512sums=('@SOURCE_SHA512@')
+
+build() {
+  MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
+    cmake -S "yl-discord.cpp-${_source_commit}" -B "build-${MSYSTEM}" -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${MINGW_PREFIX}" \
+      -DBUILD_SHARED_LIBS=ON -DYL_DISCORD_BUILD_EXAMPLES=OFF \
+      -DYL_DISCORD_BUILD_TESTS=ON -DYL_DISCORD_FETCH_ASIO=OFF
+  cmake --build "build-${MSYSTEM}" --parallel 2
+}
+
+check() {
+  ctest --test-dir "build-${MSYSTEM}" --output-on-failure
+}
+
+package() {
+  DESTDIR="${pkgdir}" cmake --install "build-${MSYSTEM}"
+  install -Dm644 "yl-discord.cpp-${_source_commit}/README.md" \
+    "${pkgdir}${MINGW_PREFIX}/share/doc/${_realname}/README.md"
+}

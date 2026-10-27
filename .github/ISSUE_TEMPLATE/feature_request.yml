@@ -1,0 +1,10 @@
+name: Feature request
+description: Propose a library or developer-experience improvement
+body:
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Problem and proposed behavior
+      description: Include a small example API and explain who benefits.
+    validations:
+      required: true

@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+# Copyright (C) 2026 Cavanshirpro
+# Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
+name: publish-conan
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published GitHub release tag
+        type: string
+        required: true
+        default: v0.1.0
+      upload:
+        description: Upload this library to the configured Conan remote
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+      upload:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: conan-publish-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: conan-publish
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      CONAN_REMOTE_URL: ${{ vars.CONAN_REMOTE_URL }}
+      CONAN_LOGIN_USERNAME_PUBLISH: ${{ secrets.CONAN_LOGIN_USERNAME }}
+      CONAN_PASSWORD_PUBLISH: ${{ secrets.CONAN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+      - name: Verify published source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python scripts/check_release.py --tag "$RELEASE_TAG"
+          gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft' | grep -Fx false
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - run: python -m pip install 'conan==2.33.0'
+      - run: conan profile detect
+      - name: Build and test static and shared packages
+        run: |
+          conan create . --build=missing -s compiler.cppstd=20 -o '&:shared=False' -c tools.cmake.cmaketoolchain:generator=Ninja -c tools.build:jobs=2
+          conan create . --build=missing -s compiler.cppstd=20 -o '&:shared=True' -c tools.cmake.cmaketoolchain:generator=Ninja -c tools.build:jobs=2
+      - name: Upload only yl-discord-cpp
+        if: inputs.upload
+        run: |
+          if [ -z "$CONAN_REMOTE_URL" ] || [ -z "$CONAN_LOGIN_USERNAME_PUBLISH" ] || [ -z "$CONAN_PASSWORD_PUBLISH" ]; then
+            echo "Configure CONAN_REMOTE_URL, CONAN_LOGIN_USERNAME and CONAN_PASSWORD before requesting upload." >&2
+            exit 1
+          fi
+          conan remote add publish "$CONAN_REMOTE_URL"
+          conan remote auth publish -cc core:non_interactive=True
+          version=$(cat VERSION)
+          conan upload "yl-discord-cpp/$version" -r publish --confirm -cc core:non_interactive=True

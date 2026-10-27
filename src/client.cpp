@@ -1,0 +1,156 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (C) 2026 Cavanshirpro
+// Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
+#include <yl/discord/client.hpp>
+#include <asio/co_spawn.hpp>
+#include <asio/post.hpp>
+#include <stdexcept>
+#include <utility>
+
+namespace yl::discord {
+namespace {
+
+// Keeping the callable in the parent frame also keeps captured coroutine-lambda
+// state alive across suspension and command/listener registry changes.
+template <typename Handler, typename Event>
+task<> invoke(std::shared_ptr<Handler> handler, Event event) {
+    co_await (*handler)(std::move(event));
+}
+
+template <typename Event>
+task<> invoke_hook(Client* client, task<> (Client::*hook)(Event), Event event) {
+    co_await (client->*hook)(std::move(event));
+}
+
+template <typename Handler>
+std::shared_ptr<Handler> checked_handler(Handler handler) {
+    if (!handler) {
+        throw std::invalid_argument("Event handler cannot be empty");
+    }
+    return std::make_shared<Handler>(std::move(handler));
+}
+
+} // namespace
+
+Client::Client(std::shared_ptr<MessageTransport> transport, ClientOptions options)
+    : transport_(std::move(transport)), options_(options) {
+    if (!transport_) {
+        throw std::invalid_argument("Client requires a message transport");
+    }
+}
+
+Client::~Client() { io_.stop(); }
+
+Client& Client::listen_message(MessageHandler handler) {
+    message_handlers_.push_back(checked_handler(std::move(handler)));
+    return *this;
+}
+
+Client& Client::listen_ready(ReadyHandler handler) {
+    ready_handlers_.push_back(checked_handler(std::move(handler)));
+    return *this;
+}
+
+Client& Client::listen_raw(RawHandler handler) {
+    raw_handlers_.push_back(checked_handler(std::move(handler)));
+    return *this;
+}
+
+void Client::dispatch(Message message) {
+    asio::post(io_, [this, message = std::move(message)]() mutable {
+        message.transport_ = transport_;
+        handle_message(std::move(message));
+    });
+}
+
+void Client::dispatch(Ready event) {
+    asio::post(io_, [this, event = std::move(event)] {
+        spawn(invoke_hook(this, &Client::on_ready, event), "on_ready");
+        const auto handlers = ready_handlers_;
+        for (const auto& handler : handlers) {
+            spawn(invoke(handler, event), "ready listener");
+        }
+    });
+}
+
+void Client::dispatch(RawEvent event) {
+    asio::post(io_, [this, event = std::move(event)] {
+        spawn(invoke_hook(this, &Client::on_raw_event, event), "on_raw_event:" + event.name);
+        const auto handlers = raw_handlers_;
+        for (const auto& handler : handlers) {
+            spawn(invoke(handler, event), "raw listener:" + event.name);
+        }
+    });
+}
+
+void Client::handle_message(Message message) {
+    spawn(invoke_hook(this, &Client::on_message, message), "on_message");
+    const auto handlers = message_handlers_;
+    for (const auto& handler : handlers) {
+        spawn(invoke(handler, message), "message listener");
+    }
+}
+
+void Client::spawn(task<> work, std::string source) {
+    asio::co_spawn(io_, std::move(work), [this, source = std::move(source)](std::exception_ptr error) {
+        if (error) {
+            report_error(TaskError{source, error});
+        }
+    });
+}
+
+void Client::report_error(TaskError error) {
+    try {
+        auto work = on_error(error);
+        asio::co_spawn(io_, std::move(work), [this, error](std::exception_ptr failure) mutable {
+            if (failure) {
+                error.exception = failure;
+                errors_.push_back(std::move(error));
+            }
+        });
+    } catch (...) {
+        error.exception = std::current_exception();
+        errors_.push_back(std::move(error));
+    }
+}
+
+void Client::run() {
+    if (running_) {
+        throw std::logic_error("Client::run cannot be called recursively");
+    }
+    running_ = true;
+    io_.restart();
+    try {
+        io_.run();
+    } catch (...) {
+        running_ = false;
+        throw;
+    }
+    running_ = false;
+    if (!errors_.empty()) {
+        auto failure = errors_.front().exception;
+        errors_.erase(errors_.begin());
+        std::rethrow_exception(failure);
+    }
+}
+
+void Client::stop() noexcept { io_.stop(); }
+
+task<Message> Client::send_message(Snowflake channel, std::string content) {
+    Message source;
+    source.channel_id = channel;
+    source.transport_ = transport_;
+    return Message::send_impl(std::move(source), std::move(content), false);
+}
+
+std::vector<TaskError> Client::take_errors() { return std::exchange(errors_, {}); }
+
+task<> Client::on_ready(Ready) { co_return; }
+task<> Client::on_message(Message) { co_return; }
+task<> Client::on_raw_event(RawEvent) { co_return; }
+task<> Client::on_error(TaskError error) {
+    std::rethrow_exception(error.exception);
+    co_return;
+}
+
+} // namespace yl::discord

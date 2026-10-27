@@ -1,0 +1,26 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "default",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/default",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "mingw64",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/mingw64",
+      "cacheVariables": { "CMAKE_CXX_COMPILER": "C:/msys64/mingw64/bin/g++.exe" },
+      "environment": { "PATH": "C:/msys64/mingw64/bin;$penv{PATH}" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "default", "configurePreset": "default" },
+    { "name": "mingw64", "configurePreset": "mingw64" }
+  ],
+  "testPresets": [
+    { "name": "default", "configurePreset": "default", "output": { "outputOnFailure": true } },
+    { "name": "mingw64", "configurePreset": "mingw64", "output": { "outputOnFailure": true } }
+  ]
+}

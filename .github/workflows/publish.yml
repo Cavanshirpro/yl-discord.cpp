@@ -1,0 +1,100 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+# Copyright (C) 2026 Cavanshirpro
+# Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
+name: publish
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing vMAJOR.MINOR.PATCH release tag
+        type: string
+        required: true
+        default: v0.1.0
+permissions:
+  contents: read
+concurrency:
+  group: publish-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      commit: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate requested tag and freeze source commit
+        id: commit
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          python scripts/check_release.py --tag "$RELEASE_TAG"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  build:
+    needs: validate
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.validate.outputs.commit }}
+  packages:
+    needs: validate
+    uses: ./.github/workflows/packages.yml
+    with:
+      ref: ${{ needs.validate.outputs.commit }}
+  release:
+    needs: [validate, build, packages]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.validate.outputs.commit }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: source
+          path: build/dist
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: msys2-*
+          merge-multiple: true
+          path: build/dist
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: vcpkg-overlay
+          path: build/dist
+      - run: python scripts/make_msys2_recipe.py
+      - name: Validate assets and publish
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python scripts/check_release.py --tag "$RELEASE_TAG"
+          cmp release.md build/dist/release.md
+          python scripts/check_release.py --archive "build/dist/yl-discord.cpp-$RELEASE_TAG.tar.gz"
+          python scripts/checksums.py build/dist
+          python scripts/publish_release.py
+      - name: Conan publication status
+        env:
+          REMOTE_URL: ${{ vars.CONAN_REMOTE_URL }}
+        run: |
+          if [ -z "$REMOTE_URL" ]; then
+            echo "Conan upload is not configured. Set CONAN_REMOTE_URL and the documented publish secrets." >> "$GITHUB_STEP_SUMMARY"
+          fi
+  conan-upload:
+    needs: release
+    if: vars.CONAN_REMOTE_URL != ''
+    uses: ./.github/workflows/publish-conan.yml
+    with:
+      tag: ${{ inputs.tag || github.ref_name }}
+      upload: true
+    secrets: inherit

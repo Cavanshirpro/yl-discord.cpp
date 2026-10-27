@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.25)
+project(yl_discord_package_test LANGUAGES CXX)
+find_package(ylDiscord CONFIG REQUIRED)
+add_executable(consumer main.cpp)
+target_link_libraries(consumer PRIVATE yl::discord)

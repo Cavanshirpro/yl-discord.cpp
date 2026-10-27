@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (C) 2026 Cavanshirpro
+// Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
+#pragma once
+#include <string_view>
+
+#define YL_DISCORD_VERSION "@PROJECT_VERSION@"
+#define YL_DISCORD_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define YL_DISCORD_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define YL_DISCORD_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+namespace yl::discord {
+/// @brief Package version from the project's MAJOR.MINOR.PATCH VERSION file.
+inline constexpr std::string_view version = YL_DISCORD_VERSION;
+}
