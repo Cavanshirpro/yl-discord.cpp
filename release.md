@@ -1,57 +1,63 @@
-# yl-discord.cpp v0.1.0
+# yl-discord.cpp v0.1.1
 
-The first offline foundation prerelease of a C++20 Discord bot library inspired
-by discord.py's ease of use. Package version: **0.1.0**.
+The first normal release in the v0.1 line, completing the live bot message flow
+on top of the v0.1.0 offline foundation. Package version: **0.1.1**.
 
-**This release does not connect to Discord.** It provides the async runtime,
-event/command API and memory transport for development and testing. HTTP REST,
-WebSocket Gateway, token login, slash commands and voice are not implemented.
-The public API is experimental; no speed or memory advantage has been measured.
+## Live bot support
 
-## Included
+- Default Client/Bot constructors, `run(token)`, awaitable `start()`, `close()`
+  and `token_from_env()` for DISCORD_BOT_TOKEN.
+- Bot-authenticated REST and Gateway API v10 discovery/Hello/Identify/Ready.
+- Heartbeat jitter/ACK, reconnect/resume, fatal close handling and identify budgets.
+- MESSAGE_CREATE → prefix command → `co_await ctx.reply(...)` → actual HTTP request.
+- Nonblocking curl multi HTTP, verified TLS, deadlines and bounded response bodies.
+- Route/shared-bucket/global limits with asynchronous 429 waiting and bounded retries.
+- A 401 stops later requests; uncertain POST failures are not retried automatically.
+- Fragmented WebSocket messages, control frames and repeated-sequence suppression.
+- Network shutdown during requests, handshakes and rate-limit waits.
+- Live ping/echo example with class-based events and Ctrl+C handling.
 
-- `task<T>`, `co_await`, nonblocking timers and a single Asio event loop.
-- Client/Bot subclasses, async hooks, multiple listeners and error handling.
-- Prefix commands, aliases, quoted arguments, Context send/reply and Cog classes.
-- In-flight callback/Cog ownership, raw event dispatch and executor access.
-- MemoryTransport, offline behavior tests and two working example programs.
-- Static/shared builds, generated version/DLL headers and installed CMake consumers.
-- Conan 2 recipe, commit-pinned vcpkg overlay and MSYS2 package automation.
-- API/build/distribution/release documentation and MAJOR.MINOR.PATCH validation.
+## Release automation
+
+VERSION/release metadata changes on main now create an annotated version tag and
+**call full publication directly**. A GITHUB_TOKEN-created tag therefore still
+leads to a published GitHub Release with files. Manually pushed tags also work.
+Assets upload to a draft first; only a completed upload becomes public. Retrying
+an already complete release keeps its files unchanged.
+
+## Validation and compatibility
+
+Core tests, eleven local HTTP/WebSocket scenarios, installed consumers and package
+builds cover the actual frame/JSON flow. CI includes Linux GCC/Clang, ASan/UBSan,
+Windows MSVC/MinGW, Conan static/shared, vcpkg and both MSYS2 environments.
+Automated tests do not use a real Discord credential. An authenticated Discord
+smoke test remains an owner-initiated step.
+
+**Rebuild v0.1.0 consumers.** Public object layouts expanded for networking.
+Pre-1.0 shared libraries now use full-version soname/DLL runtime names to prevent
+an old application from loading a new incompatible layout. Match compiler,
+runtime and dependency versions for binary packages.
+
+The API remains experimental. Slash commands, interactions/UI, voice, compression,
+sharding, cache and broad guild/member models are not implemented. No measured
+performance advantage over discord.py is claimed. Outgoing messages disable
+automatic mentions. Prefix commands need Message Content Intent in code and in
+the Discord Developer Portal.
 
 ## Downloads
 
-From [this release](https://github.com/Cavanshirpro/yl-discord.cpp/releases/tag/v0.1.0):
+- [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1.zip)
+- [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1.tar.gz)
+- [vcpkg overlay](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1-vcpkg-overlay.zip)
+- [MINGW64 package](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/mingw-w64-x86_64-yl-discord-cpp-0.1.1-1-any.pkg.tar.zst)
+- [UCRT64 package](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/mingw-w64-ucrt-x86_64-yl-discord-cpp-0.1.1-1-any.pkg.tar.zst)
+- [MSYS2 recipe](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1-msys2-recipe.zip)
+- [Release notes](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/release.md)
+- [SHA256SUMS](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/SHA256SUMS)
 
-- [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.0/yl-discord.cpp-v0.1.0.zip)
-- [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.0/yl-discord.cpp-v0.1.0.tar.gz)
-- [vcpkg overlay](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.0/yl-discord.cpp-v0.1.0-vcpkg-overlay.zip)
-- [MINGW64 package](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.0/mingw-w64-x86_64-yl-discord-cpp-0.1.0-1-any.pkg.tar.zst)
-- [UCRT64 package](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.0/mingw-w64-ucrt-x86_64-yl-discord-cpp-0.1.0-1-any.pkg.tar.zst)
-- [MSYS2 source recipe](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.0/yl-discord.cpp-v0.1.0-msys2-recipe.zip)
-- [Release notes](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.0/release.md)
-- [SHA256SUMS](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.0/SHA256SUMS)
+These are project-hosted packages; central registry inclusion is separate.
+Optional Conan remote upload needs owner-configured credentials.
 
-Source archives include source, examples, tests, documentation, recipes and
-license notices. Dependencies are not bundled. Native MSYS2 packages use
-declared Asio/runtime dependencies and must match your compiler environment.
-Project-hosted packages are not central ConanCenter/vcpkg/MSYS2 listings.
-
-## Build and try
-
-Use a C++20 compiler, CMake >= 3.25, Ninja and standalone Asio >= 1.30.2. CMake
-can fetch a pinned Asio commit when needed. Python >= 3.10 supports release tools.
-
-```sh
-cmake --preset default
-cmake --build --preset default --parallel 2
-ctest --preset default
-./build/default/yl_offline_bot
-```
-
-On Windows add `.exe`; use the matching MINGW64/UCRT64 runtime on PATH.
-Consumers use `find_package(ylDiscord 0.1 CONFIG REQUIRED)` and `yl::discord`.
-For setup and package instructions see
-[the documentation](https://github.com/Cavanshirpro/yl-discord.cpp/tree/v0.1.0/docs).
-
-Copyright (C) 2026 Cavanshirpro. **LGPL-3.0-or-later**. Asio remains BSL-1.0.
+See [live setup](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.1.1/docs/LIVE_BOTS.md)
+and [documentation](https://github.com/Cavanshirpro/yl-discord.cpp/tree/v0.1.1/docs).
+Copyright (C) 2026 Cavanshirpro. **LGPL-3.0-or-later**; dependencies retain their licenses.
