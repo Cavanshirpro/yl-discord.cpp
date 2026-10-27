@@ -50,11 +50,13 @@ public:
 struct BotOptions {
     std::string command_prefix = "!";
     Intents intents = Intents::defaults();
+    ConnectionOptions connection;
 };
 
 /// @brief Async Client with prefix commands, aliases and owned Cog callbacks.
 class YL_DISCORD_EXPORT Bot : public Client {
 public:
+    explicit Bot(BotOptions options = {});
     explicit Bot(std::shared_ptr<MessageTransport> transport, BotOptions options = {});
     Bot& command(std::string name, std::function<task<>(Context)> callback, CommandOptions options = {});
     Bot& add_cog(std::shared_ptr<Cog> cog);

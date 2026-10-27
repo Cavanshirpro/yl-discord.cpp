@@ -1,6 +1,7 @@
 # Testing
 
-All current tests are offline. No token, real account or network request is
+All current tests run without a real Discord account. Network integration tests
+use local HTTP/WebSocket fixture servers. No token, real account or network request is
 needed to execute the C++ tests/examples. Dependency and package downloads can
 need network access during setup.
 
@@ -24,12 +25,15 @@ the suite does not use the disabled `assert` macro.
 CI also relocates CMake installation prefixes and tests shared/static builds.
 
 Release-tool tests reject version mismatch, broken links, credential paths,
-unsafe archive entries and unfinished release notes. Source ZIP/TAR archives
-are validated after creation. `check_release.py` scans only tracked/unignored
+unsafe archive entries and unfinished release notes. Publisher tests verify create/upload/final publication and idempotent retry.
+Source ZIP/TAR archives are validated after creation. `check_release.py` scans only tracked/unignored
 project files; it does not read ignored local credential files. Never force-add
 such files. The scanner is a release check, not a guarantee of secret detection.
 
-Current Actions coverage includes Linux GCC/Clang, Windows MSVC/MinGW, Conan
+Current Actions coverage includes Linux GCC/Clang (including a static ASan/UBSan
+configuration), Windows MSVC/MinGW, Conan
 static/shared consumers, vcpkg overlay installation and MSYS2 MINGW64/UCRT64.
-Do not add a live-token check to PR workflows. Future live transport needs local
-HTTP/Gateway fixture tests before manual Discord smoke tests.
+Do not add a live-token check to PR workflows. The local integration suite verifies real JSON/frame traffic, delayed REST replies
+with independent heartbeats, Resume, fragments, 429/global/shared limits, 401,
+request/handshake deadlines, missing ACK, fatal close and cancellation during
+network operations. Authenticated Discord smoke tests remain owner-initiated.

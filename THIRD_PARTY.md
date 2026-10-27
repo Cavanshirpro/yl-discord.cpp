@@ -12,6 +12,15 @@ Asio remains a separate dependency. Source archives do not bundle it; CMake may
 fetch it into the build tree. Installed packages require its headers separately.
 Preserve Asio's own license notices when redistributing it.
 
+**libcurl** provides HTTP/TLS and WebSocket framing. Conan and CI use 8.23.0;
+compatible system builds >= 7.86 need TLS, asynchronous DNS and ws/wss support.
+It uses the curl license. **nlohmann/json** supplies internal JSON conversion,
+under the MIT license; Conan uses 3.12.0 (minimum 3.11).
+
+Dependency license texts are included under [third_party/licenses](third_party/licenses/README.md)
+and installed alongside this library's notices. Dependency sources/binaries are
+still resolved separately rather than bundled into source release archives.
+
 The C++ implementation contains no Python source from discord.py.
 [discord.py](https://github.com/Rapptz/discord.py) is a design/usability reference.
 Release tooling follows the maintainer's

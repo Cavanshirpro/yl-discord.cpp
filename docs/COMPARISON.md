@@ -3,17 +3,17 @@
 This is a capability/scope comparison, not a benchmark. It does not imply API
 compatibility or complete coverage of discord.py.
 
-| Area | discord.py | yl-discord.cpp v0.1.0 |
+| Area | discord.py | yl-discord.cpp v0.1.1 |
 | --- | --- | --- |
 | Async functions | Python async/await | C++20 task/co_await, Asio |
 | Class event overrides | Supported | Implemented for the initial models |
 | Prefix commands / Cogs | Established extension | Small offline implementation |
-| Token login / Gateway | Implemented | Planned |
-| REST / rate limits | Implemented | Transport interface only |
+| Token login / Gateway | Implemented | Bot sessions, heartbeat, resume |
+| REST / rate limits | Implemented | Async messages and low-level requests, bucket/global limits |
 | Slash commands / UI | Implemented | Planned |
 | Guild/member/role/cache APIs | Broad coverage | Initial User/Message models only |
 | Voice | Supported | Not implemented |
-| Raw access | Raw events and advanced APIs | Manual raw dispatch and executor access |
+| Raw access | Raw events and advanced APIs | Live raw dispatch, low-level REST and executor |
 | Offline test transport | Application/tooling dependent | Included MemoryTransport |
 | Distribution | Python packages | Source/CMake, Conan recipe, vcpkg overlay, MSYS2 assets |
 

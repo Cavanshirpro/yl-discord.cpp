@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: '3.13'
-      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build autoconf automake libtool pkg-config
       - run: python -m pip install 'conan==2.33.0'
       - run: conan profile detect
       - name: Package and test consumer
@@ -91,6 +91,7 @@ jobs:
           install: >-
             git base-devel ${{ matrix.prefix }}-gcc ${{ matrix.prefix }}-cmake
             ${{ matrix.prefix }}-ninja ${{ matrix.prefix }}-asio ${{ matrix.prefix }}-python
+            ${{ matrix.prefix }}-curl ${{ matrix.prefix }}-nlohmann-json
       - run: python scripts/make_msys2_recipe.py
       - name: Build and install package
         env:

@@ -1,4 +1,4 @@
-# API reference — v0.1.0
+# API reference — v0.1.1
 
 Include `<yl/discord.hpp>` and use namespace `yl::discord`. Generated headers
 come from CMake; link the `yl::discord` target. The testing transport has a
@@ -14,8 +14,9 @@ Blocking functions remain blocking; see [ownership rules](ARCHITECTURE.md).
 
 ## Client
 
-Construct `Client(std::shared_ptr<MessageTransport>, ClientOptions = {})`.
-Null transport is rejected. Copying is disabled.
+Construct `Client(ClientOptions = {})` for built-in networking, or
+`Client(std::shared_ptr<MessageTransport>, ClientOptions = {})` for a custom/offline
+transport. Null custom transport is rejected. Copying is disabled.
 
 | Method | Behavior |
 | --- | --- |
@@ -24,6 +25,10 @@ Null transport is rejected. Copying is disabled.
 | `listen_raw(handler)` | Add a `task<>(RawEvent)` callback |
 | `dispatch(Message/Ready/RawEvent)` | Thread-safe queued event ingress |
 | `run()` | Drain work/timers; throw first unhandled error after draining |
+| `run(bot_token)` | Start the Gateway and run until close/fatal failure |
+| `start(bot_token)` | Lazy live-session task on this Client's executor |
+| `close()` | Thread-safe network shutdown, including pending REST waits |
+| `rest()` | Built-in RestClient; custom-transport Clients reject this |
 | `stop()` | Pause the event loop without cancelling tasks |
 | `spawn(task, source = "background")` | Start work on this Client's executor |
 | `send_message(channel_id, content)` | Return a lazy `task<Message>` |
@@ -46,7 +51,8 @@ or recursively. Hook/listener/command completion order is unspecified.
 
 ## Bot, commands and Context
 
-`Bot(transport, BotOptions = {})` adds a command prefix (default `!`) and intents.
+`Bot(BotOptions = {})` uses built-in networking; `Bot(transport, BotOptions = {})`
+uses a custom transport. Both add a command prefix (default `!`) and intents.
 Prefix must be nonempty and contain no whitespace. Names/aliases are
 case-sensitive and cannot contain whitespace, quotes or backslashes.
 
@@ -101,7 +107,8 @@ See the complete [class example](../examples/class_bot.cpp).
   Defaults include only guilds, guild messages and direct messages; this is not
   the full discord.py default set. Supported enum names also include guild
   members, guild presences and message content. They are configuration data,
-  with no Gateway filtering in this release.
+  passed to Gateway Identify by built-in live connections. Privileged intents
+  also require enabling in the Discord Developer Portal.
 
 ## Message transport and test support
 
@@ -120,3 +127,40 @@ calls and does not emulate Discord's validation or rate limits.
 `yl::discord::version` is a constexpr string view. `YL_DISCORD_VERSION` and
 `YL_DISCORD_VERSION_MAJOR/MINOR/PATCH` macros are generated from [VERSION](../VERSION).
 The public API remains experimental; see [versioning](VERSIONING.md).
+
+## Live transport
+
+ClientOptions/BotOptions have a `connection` field containing ConnectionOptions:
+REST base URL (Discord API v10), request/connect timeouts (30/15 seconds),
+reconnect delay (one second), reconnect budget (8), 429 retry budget (5) and
+decoded response limit (8 MiB). Reconnect delay must be within 0–30 seconds.
+HTTPS/WSS are required except for loopback/localhost fixture URLs. TLS verification
+cannot be disabled through this API.
+
+`RestClient(executor, options)` also works independently. Call
+`authenticate(raw_bot_token)` before its first request. `request(method, route,
+json_body = {})` returns `task<HttpResponse>` with status, lowercase headers and
+body. Routes are API-relative; methods are GET/POST/PUT/PATCH/DELETE. All requests
+share route/bucket/global rate-limit handling. Authentication cannot change after
+requests begin; 401 prevents further requests with that client. Only 429 is
+automatically retried, not potentially committed POSTs after network failures.
+
+`HttpError` exposes `status()` and `discord_code()` without response contents or
+credentials in `what()`. `TransportError` reports I/O/deadline failures;
+`ProtocolError` reports invalid payloads, fatal Gateway close codes or session
+limits. Outgoing message mentions are disabled by default.
+
+`token_from_env()` reads DISCORD_BOT_TOKEN; pass another variable name if needed.
+Use a raw bot token, without the `Bot ` HTTP prefix. `run(token)` authenticates
+the Client's RestClient automatically before Gateway discovery.
+
+A live Client starts once and reconnects internally, retaining sequence/session/
+resume URL. Construct a new Client after close. Sessions healthy for at least
+60 seconds reset the reconnect budget. Fatal close codes do not retry; invalid
+sessions re-identify after a randomized protocol delay. Compression/sharding
+are not implemented. Raw events contain the full dispatch JSON envelope. Resume
+does not synthesize Ready; repeated sequence numbers are ignored.
+
+`close()` cancels network work, not application-owned timers, signals or unrelated
+tasks. Cancel those yourself. Network cancellation during close is not an
+unhandled task error. `stop()` retains pause/resume semantics. See [live setup](LIVE_BOTS.md).

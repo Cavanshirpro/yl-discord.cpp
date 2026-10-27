@@ -20,6 +20,8 @@ COPYING for the GPL version 3 terms incorporated by the LGPL.
 
 Standalone Asio is a separate dependency licensed under BSL-1.0. Its license is
 not replaced by this project's license. See THIRD_PARTY.md.
+libcurl uses the curl license; nlohmann/json uses MIT. Dependency license texts
+are installed from third_party/licenses and do not change this project's license.
 
 This is an independent, unofficial project, not affiliated with Discord.
 discord.py is an API/usability reference; its Python source is not bundled.

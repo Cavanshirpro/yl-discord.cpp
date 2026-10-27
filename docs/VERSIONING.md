@@ -17,12 +17,13 @@ No cross-compiler/standard-library ABI compatibility is promised.
 public version constants. `release.json` adds the exact tag and a GitHub
 `prerelease` boolean; the vcpkg manifest and release notes must agree.
 The boolean is GitHub release metadata, not an extra semantic-version component.
-v0.1.0 is marked as a prerelease because live Discord transport is incomplete.
+v0.1.0 is marked as a prerelease because it was an offline foundation. v0.1.1 completes the initial live-message milestone
+and is published as a normal GitHub release.
 
 For a later release, prepare completed Markdown notes mentioning the new tag:
 
 ```sh
-python scripts/bump_version.py 0.1.1 --notes /path/to/completed-notes.md
+python scripts/bump_version.py 0.1.2 --notes /path/to/completed-notes.md
 ```
 
 Use `--stable` to set GitHub's prerelease flag to false. The helper refuses an

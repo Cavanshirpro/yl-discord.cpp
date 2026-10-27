@@ -12,23 +12,24 @@ Future items are plans, not release dates or current capabilities.
 - [x] Offline behavior tests and examples.
 - [x] CMake install/export, package recipes and publication workflows.
 
-## Next — live messages
+## Live messages — v0.1.1
 
-- [ ] Nonblocking TLS HTTP and WebSocket transports.
-- [ ] Bot-token authentication without credentials in logs.
-- [ ] Gateway discovery, API v10, Hello, Identify and Ready.
-- [ ] Heartbeat jitter, ACK tracking and immediate heartbeat responses.
-- [ ] Sequence/session persistence, reconnect/resume and close-code policy.
-- [ ] JSON model conversion with explicit optional/partial fields.
-- [ ] MESSAGE_CREATE → Bot → awaitable reply → REST send.
-- [ ] Server-driven bucket/global limits and 429 waiting.
-- [ ] Timeouts, cancellation, bounded retries and graceful shutdown.
-- [ ] Local HTTP/Gateway fixtures, then an explicitly initiated live test.
+- [x] Nonblocking TLS HTTP and WebSocket transports.
+- [x] Bot-token authentication without credentials in logs.
+- [x] Gateway discovery, API v10, Hello, Identify and Ready.
+- [x] Heartbeat jitter, ACK tracking and immediate heartbeat responses.
+- [x] Sequence/session persistence, reconnect/resume and close-code policy.
+- [x] JSON conversion for supported User/Message/Ready models.
+- [x] MESSAGE_CREATE → Bot → awaitable reply → REST send.
+- [x] Server-driven bucket/global limits and 429 waiting.
+- [x] Request/handshake deadlines, bounded retries and network shutdown.
+- [x] Local HTTP/WebSocket integration fixtures.
+- [ ] Owner-initiated authenticated Discord smoke test.
 
-Acceptance requires REST waiting without blocking heartbeats, reconnect on
-missing ACK, Resume where possible, no 429 busy loop and no endless invalid-token
-retry. Guild prefix commands will require message content intent in code and in
-the Developer Portal.
+Fixtures cover REST waiting without blocking heartbeats, reconnect on missing
+ACK, Resume, 429 waiting, fatal authentication close and network cancellation.
+Guild prefix commands require message content intent in code and in the Developer
+Portal. Compression and generic task-group cancellation remain future work.
 
 ## Everyday bot features
 

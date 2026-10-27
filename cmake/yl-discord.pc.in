@@ -4,9 +4,10 @@ libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
 includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 
 Name: yl-discord.cpp
-Description: Coroutine-first C++20 Discord bot library (offline foundation)
+Description: Coroutine-first C++20 Discord bot library
 Version: @PROJECT_VERSION@
 Requires: asio >= 1.30.2
+Requires.private: libcurl >= 7.86
 Libs: -L${libdir} -lyl_discord
 Libs.private: @YL_DISCORD_PC_SYSTEM_LIBS@
 Cflags: -I${includedir} -DASIO_STANDALONE -DASIO_NO_DEPRECATED @YL_DISCORD_PC_STATIC_DEFINE@ @YL_DISCORD_PC_PLATFORM_DEFINES@

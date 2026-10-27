@@ -47,12 +47,25 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.sha }}
           persist-credentials: false
-      - run: sudo apt-get update && sudo apt-get install -y ninja-build clang
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build clang libssl-dev libpsl-dev nlohmann-json3-dev
+      - name: Build curl with WebSockets
+        run: |
+          curl -fsSL https://curl.se/download/curl-8.23.0.tar.xz -o "$RUNNER_TEMP/curl.tar.xz"
+          tar -xf "$RUNNER_TEMP/curl.tar.xz" -C "$RUNNER_TEMP"
+          cmake -S "$RUNNER_TEMP/curl-8.23.0" -B "$RUNNER_TEMP/curl-build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/curl" \
+            -DCURL_USE_OPENSSL=ON -DCURL_DISABLE_WEBSOCKETS=OFF \
+            -DBUILD_SHARED_LIBS=ON -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF
+          cmake --build "$RUNNER_TEMP/curl-build" --parallel 2
+          cmake --install "$RUNNER_TEMP/curl-build"
+      - name: Enable address and undefined behavior sanitizers
+        if: matrix.compiler == 'g++' && matrix.shared == 'OFF'
+        run: echo 'CXXFLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' >> "$GITHUB_ENV"
       - name: Configure
         env:
           CXX: ${{ matrix.compiler }}
           SHARED: ${{ matrix.shared }}
-        run: cmake --preset default -DBUILD_SHARED_LIBS="$SHARED"
+        run: cmake --preset default -DBUILD_SHARED_LIBS="$SHARED" -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/curl"
       - run: cmake --build --preset default --parallel 2
       - run: ctest --preset default
       - run: build/default/yl_offline_bot && build/default/yl_class_bot
@@ -60,7 +73,7 @@ jobs:
         run: |
           cmake --install build/default --prefix "$RUNNER_TEMP/install"
           mv "$RUNNER_TEMP/install" "$RUNNER_TEMP/relocated"
-          cmake -S tests/consumer -B build/consumer -G Ninja -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/relocated" \
+          cmake -S tests/consumer -B build/consumer -G Ninja -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/relocated;$RUNNER_TEMP/curl" \
             -DYL_DISCORD_ASIO_INCLUDE_DIR="$GITHUB_WORKSPACE/build/default/_deps/yl_asio-src/asio/include"
           cmake --build build/consumer
           build/consumer/consumer
@@ -79,14 +92,17 @@ jobs:
       - name: Configure
         env:
           SHARED: ${{ matrix.shared }}
-        run: cmake -S . -B build/native -A x64 "-DBUILD_SHARED_LIBS=$env:SHARED"
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" install 'curl[websockets]:x64-windows' nlohmann-json:x64-windows asio:x64-windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake -S . -B build/native -A x64 "-DBUILD_SHARED_LIBS=$env:SHARED" "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
       - run: cmake --build build/native --config Release --parallel 2
       - run: ctest --test-dir build/native -C Release --output-on-failure
       - name: Relocated installed consumer
         run: |
           cmake --install build/native --config Release --prefix "$env:RUNNER_TEMP/install"
           Move-Item -LiteralPath "$env:RUNNER_TEMP/install" -Destination "$env:RUNNER_TEMP/relocated"
-          cmake -S tests/consumer -B build/consumer -A x64 "-DCMAKE_PREFIX_PATH=$env:RUNNER_TEMP/relocated" "-DYL_DISCORD_ASIO_INCLUDE_DIR=$env:GITHUB_WORKSPACE/build/native/_deps/yl_asio-src/asio/include"
+          cmake -S tests/consumer -B build/consumer -A x64 "-DCMAKE_PREFIX_PATH=$env:RUNNER_TEMP/relocated" "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
           cmake --build build/consumer --config Release --parallel 2
           $env:PATH = "$env:RUNNER_TEMP/relocated/bin;$env:PATH"
           & ./build/consumer/Release/consumer.exe
@@ -109,6 +125,7 @@ jobs:
           install: >-
             git mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake
             mingw-w64-x86_64-ninja mingw-w64-x86_64-asio
+            mingw-w64-x86_64-curl mingw-w64-x86_64-nlohmann-json mingw-w64-x86_64-python
       - run: cmake --preset default -DBUILD_SHARED_LIBS=ON -DYL_DISCORD_FETCH_ASIO=OFF
       - run: cmake --build --preset default --parallel 2
       - run: ctest --preset default

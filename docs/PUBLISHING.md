@@ -8,7 +8,10 @@ GITHUB_TOKEN is sufficient for release creation/assets; no personal token is
 needed in repository secrets. Actions are pinned by commit and Dependabot checks
 their references monthly. Fork PR builds receive no publication credentials.
 
-`publish.yml` runs on an exact version tag, calls build/package tests, then
+`release-version.yml` runs when VERSION/release metadata changes on main, creates
+the annotated tag and calls `publish.yml` directly. It therefore publishes even
+when the tag was created by GITHUB_TOKEN. Manual tag pushes also run publication.
+`publish.yml` runs on the exact version tag, calls build/package tests, then
 publishes a GitHub release. `workflow_dispatch` can retry an existing unpublished
 tag. Source/package artifacts belong to the same run and source commit.
 
@@ -55,4 +58,4 @@ requires the upstream MSYS2 process; no `pacman -S` availability is claimed.
 
 This repository currently publishes source/package assets and Markdown docs in
 GitHub. There is no separately hosted documentation website or automatic central
-registry submission. The current library still lacks live Discord transport.
+registry submission. The v0.1.1 library includes live bot REST/Gateway transport.

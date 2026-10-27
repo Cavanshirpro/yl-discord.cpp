@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Cavanshirpro
 // Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
 #include <yl/discord/client.hpp>
+#include "network_internal.hpp"
 #include <asio/co_spawn.hpp>
 #include <asio/post.hpp>
 #include <stdexcept>
@@ -9,6 +10,10 @@
 
 namespace yl::discord {
 namespace {
+
+task<> run_connection(std::shared_ptr<detail::Connection> connection, std::string token) {
+    co_await connection->run(std::move(token));
+}
 
 // Keeping the callable in the parent frame also keeps captured coroutine-lambda
 // state alive across suspension and command/listener registry changes.
@@ -31,6 +36,14 @@ std::shared_ptr<Handler> checked_handler(Handler handler) {
 }
 
 } // namespace
+
+Client::Client(ClientOptions options) : options_(std::move(options)) {
+    connection_ = std::make_shared<detail::Connection>(io_.get_executor(), options_.connection, options_.intents);
+    transport_ = connection_->rest;
+    connection_->message = [this](Message message) { dispatch(std::move(message)); };
+    connection_->ready = [this](Ready event) { dispatch(std::move(event)); };
+    connection_->raw = [this](RawEvent event) { dispatch(std::move(event)); };
+}
 
 Client::Client(std::shared_ptr<MessageTransport> transport, ClientOptions options)
     : transport_(std::move(transport)), options_(options) {
@@ -94,6 +107,11 @@ void Client::handle_message(Message message) {
 void Client::spawn(task<> work, std::string source) {
     asio::co_spawn(io_, std::move(work), [this, source = std::move(source)](std::exception_ptr error) {
         if (error) {
+            if (closing_) {
+                try { std::rethrow_exception(error); }
+                catch (const asio::system_error& e) { if (e.code() == asio::error::operation_aborted) return; }
+                catch (...) {}
+            }
             report_error(TaskError{source, error});
         }
     });
@@ -135,6 +153,19 @@ void Client::run() {
 }
 
 void Client::stop() noexcept { io_.stop(); }
+
+void Client::run(std::string token) { spawn(start(std::move(token)), "gateway"); run(); }
+task<> Client::start(std::string token) {
+    if (!connection_) throw std::logic_error("A custom-transport Client cannot start a built-in Gateway");
+    return run_connection(connection_, std::move(token));
+}
+void Client::close() {
+    asio::post(io_, [this] { closing_ = true; if (connection_) connection_->stop(); });
+}
+RestClient& Client::rest() {
+    if (!connection_) throw std::logic_error("This Client has a custom transport");
+    return *connection_->rest;
+}
 
 task<Message> Client::send_message(Snowflake channel, std::string content) {
     Message source;

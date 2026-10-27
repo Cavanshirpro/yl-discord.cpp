@@ -4,6 +4,7 @@
 """Conan 2 recipe; Asio is a public header dependency."""
 import os
 from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
 from conan.tools.build import check_min_cppstd
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.files import copy, load
@@ -13,7 +14,7 @@ required_conan_version = ">=2.21"
 
 class YlDiscordConan(ConanFile):
     name = "yl-discord-cpp"
-    description = "Coroutine-first C++20 Discord bot library (offline foundation)"
+    description = "Coroutine-first C++20 Discord bot library"
     license = "LGPL-3.0-or-later"
     url = "https://github.com/Cavanshirpro/yl-discord.cpp"
     homepage = url
@@ -21,11 +22,14 @@ class YlDiscordConan(ConanFile):
     package_type = "library"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = {"shared": False, "fPIC": True}
+    default_options = {"shared": False, "fPIC": True,
+                       "libcurl/*:with_websockets": True,
+                       "libcurl/*:with_ssl": "openssl", "libcurl/*:with_ca_fallback": True}
     exports = "VERSION"
     exports_sources = (
         "VERSION", "CMakeLists.txt", "cmake/*", "include/*", "src/*",
         "LICENSE", "COPYING", "NOTICE", "THIRD_PARTY.md",
+        "third_party/licenses/*",
     )
 
     def set_version(self):
@@ -41,10 +45,14 @@ class YlDiscordConan(ConanFile):
 
     def requirements(self):
         self.requires("asio/1.30.2", transitive_headers=True)
+        self.requires("libcurl/8.23.0")
+        self.requires("nlohmann_json/3.12.0")
 
     def validate(self):
         if self.settings.compiler.get_safe("cppstd"):
             check_min_cppstd(self, "20")
+        if not self.dependencies["libcurl"].options.with_websockets or not self.dependencies["libcurl"].options.with_ssl:
+            raise ConanInvalidConfiguration("libcurl needs WebSockets and TLS support")
 
     def layout(self):
         cmake_layout(self)
@@ -70,6 +78,8 @@ class YlDiscordConan(ConanFile):
     def package_info(self):
         self.cpp_info.libs = ["yl_discord"]
         self.cpp_info.defines = ["ASIO_STANDALONE", "ASIO_NO_DEPRECATED"]
+        if not self.options.shared:
+            self.cpp_info.defines.append("YL_DISCORD_STATIC_DEFINE")
         self.cpp_info.set_property("cmake_file_name", "ylDiscord")
         self.cpp_info.set_property("cmake_target_name", "yl::discord")
         self.cpp_info.set_property("pkg_config_name", "yl-discord")

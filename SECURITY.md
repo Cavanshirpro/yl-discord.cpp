@@ -1,7 +1,7 @@
 # Security policy
 
-The 0.1.x line is experimental. v0.1.0 contains no built-in live Discord
-transport; do not treat it as a production-ready Discord client.
+The 0.1.x line is experimental. v0.1.1 includes bot-token REST/Gateway networking with TLS verification, deadlines
+and bounded retries. The broader Discord API remains under development.
 
 Report suspected vulnerabilities through GitHub's private vulnerability report
 feature when available:

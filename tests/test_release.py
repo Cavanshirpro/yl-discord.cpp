@@ -10,9 +10,11 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from check_release import ROOT, archive_files, repository_files, validate
+import publish_release
 
 
 class PublicationTests(unittest.TestCase):
@@ -83,6 +85,45 @@ class PublicationTests(unittest.TestCase):
             self.assertEqual((root / "release.md").read_bytes(), (root / "docs/releases/0.2.0.md").read_bytes())
             result = subprocess.run(command, capture_output=True, text=True)
             self.assertNotEqual(result.returncode, 0)
+
+    def publisher_fixture(self, root):
+        (root / "build/dist").mkdir(parents=True)
+        metadata = {"tag": "v0.1.1", "version": "0.1.1", "prerelease": False}
+        (root / "release.json").write_text(json.dumps(metadata))
+        (root / "release.md").write_text("# v0.1.1\nCompleted release.\n")
+        names = ["yl-discord.cpp-v0.1.1.zip", "yl-discord.cpp-v0.1.1.tar.gz",
+                 "yl-discord.cpp-v0.1.1-vcpkg-overlay.zip", "yl-discord.cpp-v0.1.1-msys2-recipe.zip",
+                 "mingw-w64-x86_64-yl-discord-cpp-0.1.1-1-any.pkg.tar.zst",
+                 "mingw-w64-ucrt-x86_64-yl-discord-cpp-0.1.1-1-any.pkg.tar.zst", "release.md", "SHA256SUMS"]
+        for name in names:
+            (root / "build/dist" / name).write_bytes(b"fixture")
+        return names
+
+    def test_publisher_reaches_public_release_after_upload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.publisher_fixture(root)
+            result = subprocess.CompletedProcess([], 1, "", "release not found")
+            with patch.object(publish_release, "ROOT", root), patch.dict("os.environ", {"RELEASE_TAG": "v0.1.1"}), \
+                    patch.object(publish_release.subprocess, "run", return_value=result) as runner:
+                publish_release.main()
+                commands = [call.args[0] for call in runner.call_args_list]
+                self.assertEqual([command[2] for command in commands], ["view", "create", "upload", "edit"])
+                self.assertIn("--draft=false", commands[-1])
+                self.assertIn("--prerelease=false", commands[-1])
+                self.assertIn("--latest=true", commands[-1])
+
+    def test_publisher_retry_keeps_complete_release_unchanged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            names = self.publisher_fixture(root)
+            release = {"isDraft": False, "isPrerelease": False, "body": (root / "release.md").read_text(),
+                       "assets": [{"name": name, "size": 1} for name in names]}
+            result = subprocess.CompletedProcess([], 0, json.dumps(release), "")
+            with patch.object(publish_release, "ROOT", root), patch.dict("os.environ", {"RELEASE_TAG": "v0.1.1"}), \
+                    patch.object(publish_release.subprocess, "run", return_value=result) as runner:
+                publish_release.main()
+                self.assertEqual(runner.call_count, 1)
 
 
 if __name__ == "__main__":

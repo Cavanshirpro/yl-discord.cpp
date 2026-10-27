@@ -8,13 +8,15 @@ pkgbase=mingw-w64-${_realname}
 pkgname=("${MINGW_PACKAGE_PREFIX}-${_realname}")
 pkgver=@PACKAGE_VERSION@
 pkgrel=1
-pkgdesc="Coroutine-first C++20 Discord bot library, offline foundation (mingw-w64)"
+pkgdesc="Coroutine-first C++20 Discord bot library (mingw-w64)"
 arch=('any')
 mingw_arch=('mingw64' 'ucrt64')
 url='https://github.com/Cavanshirpro/yl-discord.cpp'
 license=('spdx:LGPL-3.0-or-later')
-depends=("${MINGW_PACKAGE_PREFIX}-gcc-libs" "${MINGW_PACKAGE_PREFIX}-asio")
+depends=("${MINGW_PACKAGE_PREFIX}-gcc-libs" "${MINGW_PACKAGE_PREFIX}-asio"
+         "${MINGW_PACKAGE_PREFIX}-curl" "${MINGW_PACKAGE_PREFIX}-nlohmann-json")
 makedepends=("${MINGW_PACKAGE_PREFIX}-cc" "${MINGW_PACKAGE_PREFIX}-cmake" "${MINGW_PACKAGE_PREFIX}-ninja")
+checkdepends=("${MINGW_PACKAGE_PREFIX}-python")
 options=('!debug')
 source=("${_realname}-${pkgver}.tar.gz::${url}/archive/${_source_commit}.tar.gz")
 sha512sums=('@SOURCE_SHA512@')

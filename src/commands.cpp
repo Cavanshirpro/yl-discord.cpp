@@ -70,8 +70,13 @@ task<Message> Context::send(std::string content) const {
 
 task<Message> Context::reply(std::string content) const { return message.reply(std::move(content)); }
 
+Bot::Bot(BotOptions options)
+    : Client(ClientOptions{options.intents, options.connection}), prefix_(std::move(options.command_prefix)) {
+    if (prefix_.empty() || std::any_of(prefix_.begin(), prefix_.end(), space))
+        throw std::invalid_argument("Command prefix must be nonempty and contain no whitespace");
+}
 Bot::Bot(std::shared_ptr<MessageTransport> transport, BotOptions options)
-    : Client(std::move(transport), ClientOptions{options.intents}), prefix_(std::move(options.command_prefix)) {
+    : Client(std::move(transport), ClientOptions{options.intents, options.connection}), prefix_(std::move(options.command_prefix)) {
     if (prefix_.empty() || std::any_of(prefix_.begin(), prefix_.end(), space)) {
         throw std::invalid_argument("Command prefix must be nonempty and contain no whitespace");
     }

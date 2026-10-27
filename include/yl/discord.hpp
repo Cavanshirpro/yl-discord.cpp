@@ -7,5 +7,6 @@
 #include <yl/discord/client.hpp>
 #include <yl/discord/commands.hpp>
 #include <yl/discord/models.hpp>
+#include <yl/discord/network.hpp>
 #include <yl/discord/transport.hpp>
 #include <yl/discord/version.hpp>

@@ -1,77 +1,71 @@
 # Architecture
 
-The goal is a short path from a small async bot to an application that controls
-its transports, event flow, cache budget and execution policy. The high-level
-API uses familiar concepts: `Client`, `Bot`, `Message`, `Context` and `Cog`.
-C++ functions, lambdas and virtual methods replace Python decorators.
+The high-level API uses familiar Client/Bot, Message, Context and Cog concepts.
+Ordinary C++ functions, lambdas and virtual methods replace Python decorators.
+The same command code runs with built-in networking or MemoryTransport.
 
-| Layer | Responsibility | v0.1.0 |
+| Layer | Responsibility | v0.1.1 |
 | --- | --- | --- |
-| User API | Events, prefix commands, Context and Cog | Implemented |
-| Models | Owned User/Message values, Snowflake, intents | Small initial scope |
-| Runtime | Spawn, timers, completion and errors | Standalone Asio |
-| Message transport | Awaitable send/reply port | Interface and memory implementation |
-| REST | HTTP/TLS, buckets, retries and timeouts | Planned |
-| Gateway | WebSocket, heartbeat, identify/resume | Planned |
-| State | Partial models, cache and shard coordination | Planned |
+| User API | Hooks, listeners, prefix commands and Cog | Implemented |
+| Models | Owned User/Message/Ready, Snowflake and intents | Initial scope |
+| Runtime | Coroutine tasks, timers, executor and errors | Standalone Asio |
+| Message transport | Awaitable message/reply port | REST and memory implementations |
+| REST | Verified TLS, deadlines, buckets/global limits | libcurl multi |
+| Gateway | WebSocket, heartbeat and session resume | JSON API v10 |
+| Broader state | Cache, partial guild models, shard coordination | Planned |
 
-`MessageTransport` covers message sending only; it is not a general HTTP client.
-A future REST implementation can satisfy the same port without making commands
-depend on a test implementation.
+## Ownership and execution
 
-## Coroutine ownership
+`task<T>` aliases `asio::awaitable<T>`. Tasks are lazy; await or spawn them.
+Events/Context are owned values. Parent frames keep registered callback closures
+alive across suspension and command removal. Command entries retain their Cog.
+User-captured external references must still outlive use.
 
-`task<T>` is `asio::awaitable<T>`. Tasks use Asio's frames, executors and I/O
-operations. They are lazy: await or spawn them. `sleep_for()` suspends a steady
-timer without creating a thread per task.
+`send()`/`reply()` snapshot input and bind returned messages to their transport.
+An unbound manually constructed Message cannot reply until Client dispatch binds
+it. Pending network frames retain connection/WebSocket state through shutdown
+and context destruction; socket observers release borrowed native handles before
+libcurl cleans them up.
 
-Events and Context are passed by value. Registered callbacks are kept alive in
-parent coroutine frames so suspended coroutine lambdas retain their closures.
-Command entries own their Cog until the command finishes, even after removal
-from the registry. Caller-owned captured references must still outlive use.
-
-`send()`/`reply()` snapshot their input before returning a lazy task. Returned
-messages retain their transport, so they can be replied to again. Constructed
-messages acquire a transport through `Client::dispatch()`; replying to an unbound
-message raises `std::logic_error` when awaited.
+One event-loop thread drives a shared curl multi engine for concurrent HTTP
+transfers. Its timer pump runs only with active transfers. Completed REST
+connections can be reused by curl. Gateway reads/writes wait on socket readiness;
+idle connections do not run a polling timer. DNS must be asynchronous in libcurl.
+No C++ thread is created per command/request by the library.
 
 ## Runtime contract
 
-- `run()` drains queued work and timers; it returns when no work remains.
-- `dispatch()` is thread-safe ingress. Other mutation belongs before `run()` or
-  on its executor. Do not run a Client concurrently from several threads.
-- Hooks, listeners and commands are independent tasks. Completion order is not
-  guaranteed; `on_ready()` is not a barrier before message processing.
-- `stop()` pauses the loop without cancelling tasks. Another `run()` can resume them.
-- Destroying the Client destroys remaining Asio work. Do not run the loop from
-  subclass/Cog destructors. Graceful cancellation is planned.
-- Blocking I/O and CPU work still block the loop. Queue bounds/backpressure are
-  not implemented yet.
+- `run()` drains current work. `run(token)` starts a live session first.
+- `dispatch()` and `close()` are thread-safe ingress; other mutation belongs on
+  the executor or before running. Never run one Client concurrently/recursively.
+- Hooks, listeners and commands are independent; completion order is unspecified.
+- `on_message()` overrides do not disable commands. Bot messages reach listeners
+  but do not invoke commands. Unknown names are ignored.
+- `close()` cancels network work; application timers/signals remain caller-owned.
+  `stop()` pauses the loop and allows another `run()` to resume pending work.
+- Destroying Client discards remaining Asio work. Do not run the loop in destructors.
+- Blocking I/O/CPU work still blocks the loop; queue bounds/backpressure are planned.
 
-`executor()` exposes Asio directly. This is an intentional public dependency,
-not a promise of runtime independence. A future Gateway adapter must keep an
-Asio work item alive during its connection; today's `run()` does not wait forever
-for future input.
+Registry changes preserve in-flight ownership. Cog registration rolls back on
+name conflicts. Removing any alias removes the whole command. Listener snapshots
+apply at event dispatch time. Default errors reach `on_error()` and then `run()`;
+additional failures can be retrieved with `take_errors()`.
 
-## Events and errors
+## REST and Gateway
 
-Bot forwards messages to both listeners and command processing. Overriding
-`on_message()` does not disable commands. Bot-authored messages reach listeners
-but never invoke commands. Unknown commands are ignored. Malformed argument
-quoting/escaping raises `ArgumentError` through the error hook.
+REST serializes each learned route/bucket, includes major-resource IDs in bucket
+scope, and coordinates a global deadline. Server headers/body determine waiting.
+Only 429 is retried automatically; 401 disables further requests. Response bodies
+are bounded after decompression. Authentication is never included in error text.
 
-Names/aliases are case-sensitive and duplicate registrations are rejected.
-`add_cog()` rolls back its registrations on conflict. Removing by any alias
-removes every name for that command while preserving in-flight ownership.
-Listeners use a snapshot per event; changes affect subsequent event snapshots.
+Gateway tracks sequence, session ID and resume URL, and keeps heartbeats separate
+from HTTP waits. Missing ACK causes reconnect. Fatal close codes stop; invalid
+sessions can re-identify. Handshake/request deadlines and reconnect budgets bound
+failures. TLS is mandatory except for explicitly configured loopback fixtures.
 
-Failures reach `on_error(TaskError)`. The default hook rethrows. After work drains,
-`run()` throws the first unhandled error; additional errors can be retrieved with
-`take_errors()`. A custom hook can handle/log failures instead.
+See [live behavior](LIVE_BOTS.md), [the API](API.md) and [the roadmap](ROADMAP.md).
 
-## References
-
-- [Asio C++20 coroutines](https://think-async.com/Asio/asio-1.30.2/doc/asio/overview/composition/cpp20_coroutines.html)
-- [discord.py commands](https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html)
-- [Official Discord Gateway protocol](https://github.com/discord/discord-api-docs/blob/main/developers/events/gateway.mdx)
-- [Official Discord rate limits](https://github.com/discord/discord-api-docs/blob/main/developers/topics/rate-limits.mdx)
+References: [Asio coroutines](https://think-async.com/Asio/asio-1.30.2/doc/asio/overview/composition/cpp20_coroutines.html),
+[libcurl multi](https://curl.se/libcurl/c/libcurl-multi.html),
+[Discord Gateway](https://discord.com/developers/docs/events/gateway),
+[Discord rate limits](https://discord.com/developers/docs/topics/rate-limits).

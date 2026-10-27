@@ -1,6 +1,7 @@
 # Building and installation
 
-Use C++20, CMake >= 3.25 and standalone Asio >= 1.30.2. Ninja is required by the
+Use C++20, CMake >= 3.25, standalone Asio >= 1.30.2, libcurl >= 7.86 with TLS,
+asynchronous DNS and ws/wss, and nlohmann/json >= 3.11. Ninja is required by the
 provided presets. Python >= 3.10 is needed for release tooling, not the C++ library.
 The first fallback Asio download needs Git and network access.
 
@@ -20,8 +21,10 @@ cmake --build build/offline
 ctest --test-dir build/offline --output-on-failure
 ```
 
-The installed CMake config never downloads dependencies. A consumer needs Asio
-installed through its package manager or the same explicit include-path option.
+The installed CMake config never downloads dependencies. Consumers need Asio,
+libcurl and nlohmann/json through their package manager/CMAKE_PREFIX_PATH, or
+the explicit Asio include-path option. Some distribution curl builds omit ws/wss;
+use the Conan/vcpkg recipes or build curl with WebSockets in that case.
 
 ## Linux / Ninja
 

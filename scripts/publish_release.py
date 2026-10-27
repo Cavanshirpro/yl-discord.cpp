@@ -20,9 +20,16 @@ def main():
     require(expected <= {path.name for path in assets}, "Required release assets are missing")
     require(len([path for path in assets if path.name.endswith(".pkg.tar.zst")]) == 2,
             "Expected both MINGW64 and UCRT64 packages")
-    existing = subprocess.run(["gh", "release", "view", tag, "--json", "isDraft"], capture_output=True, text=True)
+    existing = subprocess.run(["gh", "release", "view", tag, "--json", "isDraft,isPrerelease,assets,body"], capture_output=True, text=True)
     if existing.returncode == 0:
-        require(json.loads(existing.stdout)["isDraft"], "Published release will not be overwritten; publish a new PATCH version")
+        release = json.loads(existing.stdout)
+        if not release["isDraft"]:
+            require(release["isPrerelease"] == metadata["prerelease"], "Existing release classification differs; publish a new version")
+            require(release["body"].strip() == (ROOT / "release.md").read_text(encoding="utf-8").strip(), "Existing release notes differ; publish a new version")
+            require({asset["name"] for asset in release["assets"]} == {path.name for path in assets}
+                    and all(asset["size"] > 0 for asset in release["assets"]), "Published release is incomplete; inspect it before retrying")
+            print(f"Release {tag} is already published with all assets; kept unchanged")
+            return
     else:
         require("not found" in existing.stderr.lower() or "404" in existing.stderr,
                 "Unable to determine existing release status")

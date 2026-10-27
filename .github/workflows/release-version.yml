@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+# Copyright (C) 2026 Cavanshirpro
+# Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
+name: release-version
+on:
+  push:
+    branches: [main]
+    paths: [VERSION, release.json]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-version-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  tag:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate version and create immutable tag
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python scripts/check_release.py
+          python scripts/create_release_tag.py
+  publish:
+    needs: tag
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
+    secrets: inherit

@@ -66,6 +66,9 @@ def validate(files):
         "conanfile.py", "docs/API.md", "docs/BUILDING.md", "docs/DISTRIBUTION.md",
         "docs/RELEASING.md", "tests/core.cpp", "test_package/main.cpp",
         "packaging/vcpkg/vcpkg.json", ".github/workflows/ci.yml", ".github/workflows/publish.yml"
+        , ".github/workflows/release-version.yml", "scripts/create_release_tag.py", "docs/LIVE_BOTS.md",
+        "include/yl/discord/network.hpp", "src/gateway.cpp", "src/rest.cpp", "tests/network.cpp", "tests/loopback.py",
+        "third_party/licenses/asio.txt", "third_party/licenses/curl.txt", "third_party/licenses/nlohmann-json.txt"
     }
     require(required <= files.keys(), "Missing publication files: " + ", ".join(sorted(required - files.keys())))
     version = files["VERSION"].decode().strip()

@@ -1,11 +1,12 @@
 # Documentation
 
 Start with the [project README](../README.md) and [offline examples](../examples/README.md).
-v0.1.0 contains a working asynchronous core, not a live Discord connection.
+v0.1.1 adds built-in REST/Gateway bot connections to the asynchronous core.
 
 | Guide | Contents |
 | --- | --- |
 | [Building](BUILDING.md) | Compilers, dependencies, static/shared builds, CMake installation |
+| [Live bots](LIVE_BOTS.md) | Bot setup, intents, ping example and shutdown |
 | [Distribution](DISTRIBUTION.md) | Conan, vcpkg overlays and native MSYS2 packages |
 | [API](API.md) | Public classes, methods and coroutine behavior |
 | [Architecture](ARCHITECTURE.md) | Runtime, ownership, threading and extension points |

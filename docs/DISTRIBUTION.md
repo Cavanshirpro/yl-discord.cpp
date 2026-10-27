@@ -2,7 +2,7 @@
 
 The package name is **yl-discord-cpp**, repository **yl-discord.cpp**, CMake
 package **ylDiscord**, target **yl::discord**, include **yl/discord.hpp**.
-All v0.1.0 packages contain the offline foundation, not a live Discord transport.
+v0.1.1 packages include the live bot REST/Gateway transport and the offline testing core.
 
 ## Source archives / CMake
 
@@ -13,7 +13,7 @@ with `add_subdirectory()`. Source archives exclude credentials, build outputs an
 fetched dependencies. `SHA256SUMS` accompanies release assets.
 
 Installed consumers use `find_package(ylDiscord 0.1 CONFIG REQUIRED)` and
-`target_link_libraries(my_bot PRIVATE yl::discord)`. Asio >= 1.30.2 is required
+`target_link_libraries(my_bot PRIVATE yl::discord)`. Asio >= 1.30.2, libcurl with TLS/ws/wss/async DNS and nlohmann/json are required
 separately. Match the compiler ABI, architecture and runtime for binary packages.
 
 ## Conan 2
@@ -28,13 +28,13 @@ conan create . --build=missing -s compiler.cppstd=20
 
 Use a compiler profile appropriate for your environment. For MinGW on Windows,
 provide a GCC/MinGW profile rather than accepting a detected MSVC profile.
-The recipe supports `-o '&:shared=True'`, resolves `asio/1.30.2`, builds/installs
+The recipe supports `-o '&:shared=True'`, resolves Asio, libcurl and nlohmann/json, builds/installs
 the library and runs `test_package`. With that recipe in your local cache or a
 configured remote, consumers can add:
 
 ```ini
 [requires]
-yl-discord-cpp/0.1.0
+yl-discord-cpp/0.1.1
 
 [generators]
 CMakeDeps
@@ -48,7 +48,7 @@ until that remote and credentials are configured.
 
 ## vcpkg overlay
 
-Download/extract the release's `yl-discord.cpp-v0.1.0-vcpkg-overlay.zip`.
+Download/extract the release's `yl-discord.cpp-v0.1.1-vcpkg-overlay.zip`.
 It contains `vcpkg-overlay/yl-discord-cpp/portfile.cmake` and `vcpkg.json`.
 The generated port pins an exact source commit and SHA512; no placeholders remain.
 
@@ -71,7 +71,7 @@ Releases attach MINGW64 and UCRT64 `.pkg.tar.zst` packages and a source recipe Z
 Install only the package matching your active terminal, for example:
 
 ```sh
-pacman -U ./mingw-w64-x86_64-yl-discord-cpp-0.1.0-1-any.pkg.tar.zst
+pacman -U ./mingw-w64-x86_64-yl-discord-cpp-0.1.1-1-any.pkg.tar.zst
 ```
 
 Pacman resolves the declared Asio/runtime dependencies. The library DLL, import

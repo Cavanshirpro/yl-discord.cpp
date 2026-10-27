@@ -3,6 +3,11 @@
 # Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
 name: publish
 on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
   push:
     tags: ['v*']
   workflow_dispatch:
@@ -11,7 +16,7 @@ on:
         description: Existing vMAJOR.MINOR.PATCH release tag
         type: string
         required: true
-        default: v0.1.0
+        default: v0.1.1
 permissions:
   contents: read
 concurrency:
