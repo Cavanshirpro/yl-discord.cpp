@@ -2,6 +2,8 @@
 // Copyright (C) 2026 Cavanshirpro
 // Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
 #if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #define UNICODE
 #define _UNICODE
 #include <windows.h>

@@ -66,7 +66,9 @@ ctest --test-dir build/msvc -C Release --output-on-failure
 
 Generated export annotations support DLL/static consumers. Do not combine a
 MinGW library with an MSVC application; compiler, runtime and architecture must
-match. GitHub CI tests MSVC and MinGW separately.
+match. GitHub CI tests MSVC and MinGW separately. If including Windows headers
+before the library, define `WIN32_LEAN_AND_MEAN` and `NOMINMAX` before
+`<windows.h>` to avoid legacy Winsock and min/max macro conflicts.
 
 ## Options
 
