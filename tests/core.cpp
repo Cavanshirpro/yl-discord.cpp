@@ -73,9 +73,11 @@ void snowflakes_and_intents() {
 
 void argument_parser() {
     CHECK(parse_arguments("  echo  one\ttwo ") == (std::vector<std::string>{"echo", "one", "two"}));
-    CHECK(parse_arguments(R"args("two words" 'three words' "" escaped\ space)args") ==
+    const auto quoted = parse_arguments(R"args("two words" 'three words' "" escaped\ space)args");
+    CHECK(quoted ==
           (std::vector<std::string>{"two words", "three words", "", "escaped space"}));
-    CHECK(parse_arguments(R"args(pre"fix" 'a\b' "say \"hi\"")args") ==
+    const auto escaped = parse_arguments(R"args(pre"fix" 'a\b' "say \"hi\"")args");
+    CHECK(escaped ==
           (std::vector<std::string>{"prefix", "a\\b", "say \"hi\""}));
     CHECK(parse_arguments("\t \n").empty());
     throws<ArgumentError>([] { (void)parse_arguments("\"unclosed"); });

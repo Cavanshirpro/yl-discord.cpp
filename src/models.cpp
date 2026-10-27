@@ -25,15 +25,15 @@ std::chrono::sys_time<std::chrono::milliseconds> Snowflake::created_at() const n
         std::chrono::milliseconds{(value_ >> 22) + discord_epoch_ms}};
 }
 
-task<Message> Message::reply(std::string content) const {
-    return send_impl(*this, std::move(content), true);
+task<Message> Message::reply(std::string reply_content) const {
+    return send_impl(*this, std::move(reply_content), true);
 }
 
 task<Message> Message::send_impl(Message source, std::string content, bool reply) {
     if (!source.transport_) {
         throw std::logic_error("Message is not bound to a transport; dispatch it through a Client first");
     }
-    SendMessage request{source.channel_id, std::move(content), std::nullopt};
+    MessageRequest request{source.channel_id, std::move(content), std::nullopt};
     if (reply) {
         request.reply_to = source.id;
     }

@@ -105,8 +105,8 @@ See the complete [class example](../examples/class_bot.cpp).
 
 ## Message transport and test support
 
-Implement `MessageTransport::send_message(SendMessage) -> task<Message>` for an
-alternative transport. SendMessage owns `channel_id`, `content` and optional
+Implement `MessageTransport::send_message(MessageRequest) -> task<Message>` for an
+alternative transport. MessageRequest owns `channel_id`, `content` and optional
 `reply_to`. An implementation must suspend for I/O instead of blocking the loop.
 Error reporting uses normal exceptions, propagated through the caller's task.
 

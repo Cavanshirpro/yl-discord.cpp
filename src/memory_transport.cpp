@@ -8,7 +8,7 @@ namespace yl::discord::testing {
 
 MemoryTransport::MemoryTransport(User self) : self_(std::move(self)) {}
 
-task<Message> MemoryTransport::send_message(SendMessage request) {
+task<Message> MemoryTransport::send_message(MessageRequest request) {
     sent_.push_back(request);
     Message result;
     result.id = Snowflake{next_id_++};

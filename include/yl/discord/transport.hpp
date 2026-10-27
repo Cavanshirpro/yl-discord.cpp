@@ -9,7 +9,8 @@
 
 namespace yl::discord {
 
-struct SendMessage {
+/// @brief Owned outgoing payload; name avoids the Windows SendMessage macro.
+struct MessageRequest {
     Snowflake channel_id;
     std::string content;
     std::optional<Snowflake> reply_to;
@@ -20,7 +21,7 @@ struct SendMessage {
 class YL_DISCORD_EXPORT MessageTransport {
 public:
     virtual ~MessageTransport() = default;
-    [[nodiscard]] virtual task<Message> send_message(SendMessage request) = 0;
+    [[nodiscard]] virtual task<Message> send_message(MessageRequest request) = 0;
 };
 
 } // namespace yl::discord
