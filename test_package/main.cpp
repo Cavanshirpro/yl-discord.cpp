@@ -18,6 +18,11 @@ yl::discord::task<> wait_for_probe(yl::discord::Client& client, bool& observed) 
     observed = message.channel_id == yl::discord::Snowflake{42};
 }
 
+yl::discord::task<> cancelled_request_probe(yl::discord::Client& client, bool& observed) {
+    try { (void)co_await client.rest().request("GET", "/never-sent"); }
+    catch (const asio::system_error& error) { observed = yl::discord::is_cancelled(error.code()); }
+}
+
 int main() {
     using namespace yl::discord;
     auto transport = std::make_shared<testing::MemoryTransport>();
@@ -53,5 +58,13 @@ int main() {
     if (transport->sent().size() != 2 || transport->actions().size() != 5 || !replied || !probed || !observed || listeners != 1 || listener.connected()) {
         return 1;
     }
+    // Cancellation must also be recognized when its Asio category originated in a DLL.
+    Client cancelled;
+    cancelled.rest().authenticate("package-fixture-credential");
+    cancelled.close();
+    bool cancellation_seen = false;
+    cancelled.spawn(cancelled_request_probe(cancelled, cancellation_seen));
+    cancelled.run();
+    if (!cancellation_seen) return 1;
     std::cout << "yl-discord.cpp " << version << ": installed package works\n";
 }

@@ -53,6 +53,7 @@ struct EventWait {
     std::optional<Event> result;
     std::exception_ptr error;
     bool done = false;
+    bool was_cancelled = false;
 
     EventWait(asio::any_io_executor executor, std::chrono::steady_clock::duration timeout, Predicate predicate)
         : timer(executor, timeout), predicate(std::move(predicate)) {}
@@ -63,7 +64,11 @@ struct EventWait {
         done = true;
         timer.cancel();
     }
-    void cancel() { finish(std::make_exception_ptr(asio::system_error(asio::error::operation_aborted))); }
+    void cancel() {
+        if (done) return;
+        was_cancelled = true;
+        finish();
+    }
     void accept(const Event& event) {
         if (done) return;
         if (std::chrono::steady_clock::now() >= timer.expiry()) {
@@ -141,6 +146,9 @@ task<Event> wait_event(std::shared_ptr<EventSource<Event>> source, asio::any_io_
     if (token.stop_possible()) cancellation.emplace(token, cancel);
     asio::error_code error;
     co_await state->timer.async_wait(asio::redirect_error(asio::use_awaitable, error));
+    // Construct the exception in the awaiting module. Header-only Asio's category
+    // singleton can have a different address in a Windows DLL and its consumer.
+    if (state->was_cancelled) throw asio::system_error(asio::error::operation_aborted);
     if (state->error) std::rethrow_exception(state->error);
     if (state->result) co_return std::move(*state->result);
     if (error) throw asio::system_error(error);

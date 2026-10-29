@@ -10,6 +10,8 @@
 #include <chrono>
 #include <utility>
 #include <asio/version.hpp>
+#include <asio/error.hpp>
+#include <string_view>
 
 static_assert(ASIO_VERSION >= 103002, "yl-discord.cpp requires standalone Asio >= 1.30.2");
 
@@ -18,6 +20,13 @@ namespace yl::discord {
 // The executor is intentionally exposed: advanced users can await Asio I/O directly.
 template <typename T = void>
 using task = asio::awaitable<T>;
+
+/// @brief Recognize operation_aborted across shared-library Asio category instances.
+[[nodiscard]] inline bool is_cancelled(const asio::error_code& error) noexcept {
+    return error == asio::error::operation_aborted ||
+        (error.value() == static_cast<int>(asio::error::operation_aborted) &&
+         std::string_view(error.category().name()) == asio::error::get_system_category().name());
+}
 
 namespace detail {
 template <typename T>

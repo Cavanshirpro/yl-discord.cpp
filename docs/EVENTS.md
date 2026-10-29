@@ -54,6 +54,10 @@ waits on that closed Client are rejected with operation_aborted; construct a new
 Client for a fresh lifecycle. Client's existing shutdown handling suppresses
 uncaught operation_aborted errors during close. An explicit stop-token
 cancellation outside close still reaches the caller/error hook normally.
+Use `is_cancelled(error.code())` when inspecting an Asio system_error from a
+shared library. Header-only Asio can have separate error-category singleton
+addresses in a Windows DLL and its executable; the helper recognizes their
+equivalent operation_aborted codes without relying only on pointer identity.
 
 Await on the Client's event loop (an Asio strand over the same loop is accepted).
 A foreign I/O context is rejected before registering a wait. Never run one Client

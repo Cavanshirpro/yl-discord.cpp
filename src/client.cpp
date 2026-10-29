@@ -107,7 +107,7 @@ void Client::spawn(task<> work, std::string source) {
         if (error) {
             if (closing_) {
                 try { std::rethrow_exception(error); }
-                catch (const asio::system_error& e) { if (e.code() == asio::error::operation_aborted) return; }
+                catch (const asio::system_error& e) { if (is_cancelled(e.code())) return; }
                 catch (...) {}
             }
             report_error(TaskError{source, error});

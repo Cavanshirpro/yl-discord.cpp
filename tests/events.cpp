@@ -124,7 +124,7 @@ void stop_tokens_cancel_before_and_during_waits() {
     client.spawn(await_cancel(client, pre.get_token(), count)); client.run(); CHECK(count == 1);
     std::stop_source source;
     client.spawn(await_cancel(client, source.get_token(), count));
-    std::thread worker([source] { std::this_thread::sleep_for(10ms); source.request_stop(); });
+    std::thread worker([source]() mutable { std::this_thread::sleep_for(10ms); source.request_stop(); });
     client.run(); worker.join(); CHECK(count == 2);
 }
 
