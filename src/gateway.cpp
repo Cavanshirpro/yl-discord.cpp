@@ -4,6 +4,7 @@
 #include "network_internal.hpp"
 #include <algorithm>
 #include <random>
+#include <limits>
 
 namespace yl::discord::detail {
 namespace {
@@ -71,8 +72,16 @@ task<> Connection::run(std::string bot_token) {
         const auto discovery = Json::parse(response.body);
         gateway_url = discovery.at("url").get<std::string>();
         validate_url(gateway_url, true);
-        if (discovery.value("shards", 1) > 1) throw ProtocolError("This bot requires sharding, which is not supported in v0.1");
-        identifies_left = discovery.at("session_start_limit").at("remaining").get<unsigned>();
+        const auto shards = discovery.value("shards", Json(1));
+        if (!shards.is_number_integer() || shards < 1) throw ProtocolError("Invalid Gateway shard recommendation");
+        if (shards > 1) throw ProtocolError("This bot requires sharding, which is not supported");
+        const auto& remaining = discovery.at("session_start_limit").at("remaining");
+        if (!remaining.is_number_integer() || remaining < 0 || remaining > std::numeric_limits<unsigned>::max())
+            throw ProtocolError("Invalid Gateway session start limit");
+        identifies_left = remaining.get<unsigned>();
+    } catch (const Json::exception&) {
+        if (stopped) co_return;
+        throw ProtocolError("Invalid Gateway discovery response");
     } catch (...) {
         if (stopped) co_return;
         throw;

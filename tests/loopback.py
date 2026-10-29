@@ -110,6 +110,13 @@ def handler_for(state):
             now = time.monotonic()
             state.requests.append(self.path)
             port = self.server.server_address[1]
+            if state.scenario == 'bad-discovery':
+                data = b'not-json-private-fixture-content'
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
             if state.scenario == 'messages':
                 if self.path == '/api/v10/channels/42/messages/321':
                     if state.last.get('deleted'):
@@ -339,7 +346,7 @@ def handler_for(state):
 
 def main():
     executable = sys.argv[1]
-    for scenario in ('live', 'fragment', 'rest', 'messages', 'embeds', 'timeout', 'cancel', 'cancel-transfer', 'fatal',
+    for scenario in ('live', 'fragment', 'rest', 'messages', 'embeds', 'bad-discovery', 'timeout', 'cancel', 'cancel-transfer', 'fatal',
                      'missing-ack', 'handshake-timeout', 'close-handshake', 'pause-destroy'):
         state = State(scenario)
         server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler_for(state))
@@ -364,6 +371,8 @@ def main():
                             'Reaction lifecycle or 429 retry was incorrect')
             if scenario == 'embeds':
                 state.check(state.posts == 2 and state.last.get('patches') == 2, 'Rich message operation counts incorrect')
+            if scenario == 'bad-discovery':
+                state.check(state.connections == 0, 'Malformed discovery must fail before connecting to Gateway')
             if scenario in ('missing-ack', 'handshake-timeout'):
                 state.check(state.connections == 3, 'Missing ACK did not consume bounded reconnect attempts')
             if scenario in ('cancel', 'cancel-transfer', 'close-handshake'):

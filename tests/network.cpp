@@ -156,6 +156,11 @@ int main(int argc, char** argv) {
             if (scenario == "cancel") { bot.spawn(cancel_request(bot)); bot.spawn(close_soon(bot)); }
             if (scenario == "cancel-transfer") { bot.spawn(bot.rest().request("GET", "/slow")); bot.spawn(close_soon(bot)); }
             bot.run();
+        } else if (scenario == "bad-discovery") {
+            bool rejected = false;
+            try { bot.run("fixture-only-credential"); }
+            catch (const ProtocolError& error) { rejected = std::string(error.what()) == "Invalid Gateway discovery response"; }
+            check(rejected, "Malformed discovery leaked a JSON diagnostic or used the Gateway");
         } else if (scenario == "close-handshake") {
             bot.spawn(close_soon(bot));
             bot.run("fixture-only-credential");
