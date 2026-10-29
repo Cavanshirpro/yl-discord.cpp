@@ -80,6 +80,7 @@ before the library, define `WIN32_LEAN_AND_MEAN` and `NOMINMAX` before
 | `BUILD_SHARED_LIBS` | OFF | Build a shared library instead of static |
 | `YL_DISCORD_BUILD_EXAMPLES` | ON at top level | Build six offline examples and the live ping bot |
 | `YL_DISCORD_BUILD_TESTS` | ON at top level | Build core, command, event, embed, file and local network suites |
+| `YL_DISCORD_BUILD_BENCHMARKS` | OFF | Build an optional offline dispatch/reply measurement tool |
 | `YL_DISCORD_FETCH_ASIO` | ON | Allow source-build dependency download |
 | `YL_DISCORD_ASIO_INCLUDE_DIR` | Discovered | Explicit standalone Asio header directory |
 

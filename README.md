@@ -137,7 +137,9 @@ requires the [documented credentials](docs/PUBLISHING.md).
 [Roadmap](docs/ROADMAP.md) · [Testing](docs/TESTING.md) ·
 [Release process](docs/RELEASING.md) · [Changelog](CHANGELOG.md)
 
-No measured performance advantage over discord.py is claimed. This release
+No general live-bot performance advantage over discord.py is established. An
+optional [offline benchmark](docs/BENCHMARKS.md) documents a limited synthetic
+workload and its reproducible measurements. This release
 expands event and message control; broader functionality follows the roadmap.
 
 Copyright (C) 2026 Cavanshirpro. **LGPL-3.0-or-later**. See [LICENSE](LICENSE),

@@ -61,8 +61,12 @@ a deliberate policy for credentials, message content and retention.
 
 ## Performance evidence
 
+An optional [offline dispatch/reply benchmark](BENCHMARKS.md) now provides a
+repeatable synthetic baseline with raw samples, configuration and limitations.
+It does not establish full-feature or live-network superiority.
+
 After live transports work, compare equivalent workloads, intents and caches
 against discord.py on the same machine. Measure parse/dispatch throughput,
 command latency p50/p95/p99, CPU, RSS, build time and distribution size. Separate
-network latency and Discord limits from CPU benchmarks. No advantage is claimed
-before measurements exist.
+network latency and Discord limits from CPU benchmarks. No general advantage is
+claimed from the initial offline measurements.

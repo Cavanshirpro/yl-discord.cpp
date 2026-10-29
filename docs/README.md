@@ -15,6 +15,7 @@ live REST/Gateway, command, event and rich-message core.
 | [Events](EVENTS.md) | Removable listeners, predicate waits, deadlines and cancellation |
 | [Embeds](EMBEDS.md) | Rich message options, explicit edits, limits and mention policies |
 | [Files](FILES.md) | Shared upload buffers, multipart requests and retained attachments |
+| [Benchmarks](BENCHMARKS.md) | Optional offline method, reproduction and limitations |
 | [Architecture](ARCHITECTURE.md) | Runtime, ownership, threading and extension points |
 | [Examples](../examples/README.md) | Function-based commands and class-based bots/Cogs |
 | [Testing](TESTING.md) | Core, package consumer and publication checks |

@@ -65,10 +65,12 @@ jobs:
         env:
           CXX: ${{ matrix.compiler }}
           SHARED: ${{ matrix.shared }}
-        run: cmake --preset default -DBUILD_SHARED_LIBS="$SHARED" -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/curl"
+        run: cmake --preset default -DBUILD_SHARED_LIBS="$SHARED" -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/curl" -DYL_DISCORD_BUILD_BENCHMARKS=ON
       - run: cmake --build --preset default --parallel 2
       - run: ctest --preset default
       - run: build/default/yl_offline_bot && build/default/yl_class_bot && build/default/yl_command_bot && build/default/yl_wait_for_bot && build/default/yl_embed_bot && build/default/yl_upload_bot
+      - name: Offline benchmark correctness smoke (not a performance result)
+        run: build/default/yl_offline_benchmark 256 16
       - name: Relocated installed consumer
         run: |
           cmake --install build/default --prefix "$RUNNER_TEMP/install"
@@ -95,9 +97,11 @@ jobs:
         run: |
           & "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" install 'curl[websockets]:x64-windows' nlohmann-json:x64-windows asio:x64-windows
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake -S . -B build/native -A x64 "-DBUILD_SHARED_LIBS=$env:SHARED" "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          cmake -S . -B build/native -A x64 "-DBUILD_SHARED_LIBS=$env:SHARED" -DYL_DISCORD_BUILD_BENCHMARKS=ON "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
       - run: cmake --build build/native --config Release --parallel 2
       - run: ctest --test-dir build/native -C Release --output-on-failure
+      - name: Offline benchmark correctness smoke (not a performance result)
+        run: '& ./build/native/Release/yl_offline_benchmark.exe 256 16'
       - name: Relocated installed consumer
         run: |
           cmake --install build/native --config Release --prefix "$env:RUNNER_TEMP/install"
@@ -126,9 +130,11 @@ jobs:
             git mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake
             mingw-w64-x86_64-ninja mingw-w64-x86_64-asio
             mingw-w64-x86_64-curl mingw-w64-x86_64-nlohmann-json mingw-w64-x86_64-python
-      - run: cmake --preset default -DBUILD_SHARED_LIBS=ON -DYL_DISCORD_FETCH_ASIO=OFF
+      - run: cmake --preset default -DBUILD_SHARED_LIBS=ON -DYL_DISCORD_FETCH_ASIO=OFF -DYL_DISCORD_BUILD_BENCHMARKS=ON
       - run: cmake --build --preset default --parallel 2
       - run: ctest --preset default
+      - name: Offline benchmark correctness smoke (not a performance result)
+        run: ./build/default/yl_offline_benchmark.exe 256 16
       - name: Installed consumer
         run: |
           cmake --install build/default --prefix "$PWD/build/install"

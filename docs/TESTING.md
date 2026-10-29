@@ -50,6 +50,10 @@ snapshots and older transport rejection. Two additional network cases verify rea
 multipart encoding, 429 replay, UTF-8 filenames, binary bytes, retained/new/cleared
 attachments, file-only replies and cancellation during a pending 8 MiB upload.
 
+Native CI also builds/runs a 256-event offline benchmark smoke to check its event/
+reply counts and JSON output path. Those CI timings, especially sanitizer/Debug
+ones, are not performance results. See [benchmark reproduction](BENCHMARKS.md).
+
 `tests/consumer` links/runs against the installed CMake package. Conan's
 `test_package` checks an actual command/reply through the installed dependency.
 CI also relocates CMake installation prefixes and tests shared/static builds.

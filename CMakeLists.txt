@@ -8,6 +8,7 @@ project(yl_discord VERSION ${YL_DISCORD_VERSION} DESCRIPTION "Coroutine-first Di
 
 option(YL_DISCORD_BUILD_EXAMPLES "Build offline and live examples" ${PROJECT_IS_TOP_LEVEL})
 option(YL_DISCORD_BUILD_TESTS "Build offline tests" ${PROJECT_IS_TOP_LEVEL})
+option(YL_DISCORD_BUILD_BENCHMARKS "Build the optional offline dispatch benchmark" OFF)
 option(YL_DISCORD_FETCH_ASIO "Download pinned Asio if it is not installed" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
@@ -106,6 +107,15 @@ if(YL_DISCORD_BUILD_EXAMPLES)
         add_executable(yl_${example} examples/${example}.cpp)
         target_link_libraries(yl_${example} PRIVATE yl::discord)
     endforeach()
+endif()
+
+if(YL_DISCORD_BUILD_BENCHMARKS)
+    add_executable(yl_offline_benchmark benchmarks/offline.cpp)
+    target_link_libraries(yl_offline_benchmark PRIVATE yl::discord)
+    target_compile_definitions(yl_offline_benchmark PRIVATE YL_BENCHMARK_CONFIG="$<CONFIG>")
+    if(WIN32)
+        target_link_libraries(yl_offline_benchmark PRIVATE psapi)
+    endif()
 endif()
 
 if(YL_DISCORD_BUILD_TESTS)
