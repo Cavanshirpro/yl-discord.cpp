@@ -4,13 +4,13 @@ GitHub Releases provide project-built MINGW64 and UCRT64 packages. Use the
 package matching your active MSYS2 terminal. For MINGW64:
 
 ```sh
-pacman -U ./mingw-w64-x86_64-yl-discord-cpp-0.2.0-1-any.pkg.tar.zst
+pacman -U ./mingw-w64-x86_64-yl-discord-cpp-0.3.0-1-any.pkg.tar.zst
 ```
 
-For UCRT64 use `mingw-w64-ucrt-x86_64-yl-discord-cpp-0.2.0-1-any.pkg.tar.zst`.
+For UCRT64 use `mingw-w64-ucrt-x86_64-yl-discord-cpp-0.3.0-1-any.pkg.tar.zst`.
 Pacman installs declared Asio, curl, JSON and GCC runtime dependencies. The package contains
 the library DLL/import library, headers, CMake/pkg-config metadata and licenses.
-Use `find_package(ylDiscord 0.2 CONFIG REQUIRED)` and `yl::discord` in CMake.
+Use `find_package(ylDiscord 0.3 CONFIG REQUIRED)` and `yl::discord` in CMake.
 
 The recipe ZIP contains a generated PKGBUILD with an exact upstream commit and
 SHA512. In an MSYS2 terminal with base-devel and the matching compiler installed,

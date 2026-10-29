@@ -2,6 +2,27 @@
 
 Versions follow [MAJOR.MINOR.PATCH](docs/VERSIONING.md).
 
+## [0.3.0] - 2026-10-29
+
+- Predicate-based `wait_for<Message/Ready/RawEvent>()` with owned results and deadlines.
+- Standard stop tokens, native Asio cancellation and close-driven wait cancellation.
+- Explicit, weak listener connections with safe disconnection of in-flight callbacks.
+- Cross-module cancellation recognition for header-only Asio in shared builds.
+- Typed embeds, MessageOptions and optional preserve/clear MessageEditOptions.
+- Explicit allowed-mention flags/ID whitelists, with suppression remaining the default.
+- Unicode-aware outgoing schema limits and generic validation errors before HTTP.
+- Rich Gateway/REST snapshots and MemoryTransport structured edit records.
+- Confirmation and embed examples, event/embed guides and expanded installed consumers.
+- Correct runtime dependency paths when testing relocated shared packages.
+- Current-version HTTP User-Agent, locale-independent rate-delay parsing and
+  generic malformed Gateway discovery diagnostics.
+
+Validation: 13 core, 10 command, 15 event, 6 embed, 14 local network and 11
+release-tool scenarios, plus platform and package consumers. Rebuild consumers
+because this minor extends public models and virtual interfaces. Older manual
+commands, listener registration and text-edit transport overrides remain supported.
+No authenticated Discord credential or performance comparison was used.
+
 ## [0.2.0] - 2026-10-29
 
 - Typed and trailing optional command arguments, custom converters and strict arity.

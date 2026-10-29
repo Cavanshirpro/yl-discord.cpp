@@ -1,4 +1,4 @@
-# API reference — v0.2.0
+# API reference — v0.3.0
 
 Include `<yl/discord.hpp>` and use namespace `yl::discord`. Generated headers
 come from CMake; link the `yl::discord` target. The testing transport has a
@@ -133,8 +133,9 @@ See the complete [class example](../examples/class_bot.cpp).
   fields, typed outgoing validation and explicit mention control. All send/reply
   methods accept MessageOptions; edit methods accept MessageEditOptions. See [embeds](EMBEDS.md).
 - **Ready:** `user`. Dispatching Ready does not authenticate a session.
-- **RawEvent:** `name`, opaque `json`, optional `sequence`. No JSON parsing or
-  automatic raw/high-level event pairing is performed yet.
+- **RawEvent:** `name`, owned `json`, optional `sequence`. Built-in Gateway dispatches
+  provide the full JSON envelope alongside supported typed events. Custom raw
+  dispatch preserves the supplied JSON and does not synthesize typed events.
 - **Intents:** `defaults()`, `with(Intent)`, `contains(Intent)`, `value()`.
   Defaults include only guilds, guild messages and direct messages; this is not
   the full discord.py default set. Supported enum names also include guild

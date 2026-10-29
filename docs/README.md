@@ -1,8 +1,8 @@
 # Documentation
 
 Start with the [project README](../README.md) and [offline examples](../examples/README.md).
-v0.2.0 adds typed commands, async checks, cooldowns, help and message operations
-to the live REST/Gateway core.
+v0.3.0 adds cancellable event waits, removable listeners, rich embeds and explicit
+mention policies to the live REST/Gateway and command core.
 
 | Guide | Contents |
 | --- | --- |

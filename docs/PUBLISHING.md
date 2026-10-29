@@ -58,4 +58,4 @@ requires the upstream MSYS2 process; no `pacman -S` availability is claimed.
 
 This repository currently publishes source/package assets and Markdown docs in
 GitHub. There is no separately hosted documentation website or automatic central
-registry submission. The v0.2.0 library includes live bot REST/Gateway transport.
+registry submission. The v0.3.0 library includes live bot REST/Gateway transport.

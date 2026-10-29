@@ -1,6 +1,6 @@
 # Contributing
 
-Check the [current scope](docs/ROADMAP.md) before adding features. v0.2.0 includes a
+Check the [current scope](docs/ROADMAP.md) before adding features. v0.3.0 includes a
 live message transport; small, tested changes to async behavior and API clarity are useful.
 
 Use C++20 and the existing namespace/style. Keep simple bot code concise while

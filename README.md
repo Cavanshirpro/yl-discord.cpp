@@ -10,16 +10,16 @@ A C++20 Discord **bot** library built around coroutines, classes and a small API
 A personal project by [Cavanshirpro](https://github.com/Cavanshirpro), inspired by
 the ease of use of [discord.py](https://github.com/Rapptz/discord.py).
 
-**v0.2.0 adds an everyday command toolkit and message operations:** typed arguments,
-async checks, bounded cooldowns, generated help, Cog removal, fetch/edit/delete and
-reactions, on top of live REST/Gateway connections, reconnect/resume and rate limits.
+**v0.3.0 adds cancellable event waits and rich messages:** removable listeners,
+predicate waits, embeds, explicit edits and mention policies, on top of typed
+commands, async checks, cooldowns and live REST/Gateway connections.
 It is an independent implementation with an experimental API, not a complete
 discord.py port. Slash commands, UI, voice, sharding and broad guild/member APIs
 are still planned.
 
 **Downloads:** [GitHub Releases](https://github.com/Cavanshirpro/yl-discord.cpp/releases)
-| [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.2.0/yl-discord.cpp-v0.2.0.zip)
-| [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.2.0/yl-discord.cpp-v0.2.0.tar.gz)
+| [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.3.0/yl-discord.cpp-v0.3.0.zip)
+| [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.3.0/yl-discord.cpp-v0.3.0.tar.gz)
 | [Release notes](release.md)
 
 ## A small bot
@@ -112,7 +112,7 @@ See [building and installation](docs/BUILDING.md) for MSVC and offline configura
 ## Consume
 
 ```cmake
-find_package(ylDiscord 0.2 CONFIG REQUIRED)
+find_package(ylDiscord 0.3 CONFIG REQUIRED)
 target_link_libraries(my_bot PRIVATE yl::discord)
 ```
 
@@ -137,7 +137,7 @@ requires the [documented credentials](docs/PUBLISHING.md).
 [Release process](docs/RELEASING.md) · [Changelog](CHANGELOG.md)
 
 No measured performance advantage over discord.py is claimed. This release
-expands command and message ergonomics; broader functionality follows the roadmap.
+expands event and message control; broader functionality follows the roadmap.
 
 Copyright (C) 2026 Cavanshirpro. **LGPL-3.0-or-later**. See [LICENSE](LICENSE),
 [COPYING](COPYING), [NOTICE](NOTICE) and [third-party notices](THIRD_PARTY.md).

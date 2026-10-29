@@ -4,7 +4,7 @@ The high-level API uses familiar Client/Bot, Message, Context and Cog concepts.
 Ordinary C++ functions, lambdas and virtual methods replace Python decorators.
 The same command code runs with built-in networking or MemoryTransport.
 
-| Layer | Responsibility | v0.2.0 |
+| Layer | Responsibility | v0.3.0 |
 | --- | --- | --- |
 | User API | Hooks, listeners, prefix commands and Cog | Implemented |
 | Models | Owned User/Message/Ready, Snowflake and intents | Initial scope |
