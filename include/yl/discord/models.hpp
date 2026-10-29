@@ -6,6 +6,7 @@
 #include <yl/discord/async.hpp>
 #include <yl/discord/export.hpp>
 #include <yl/discord/embeds.hpp>
+#include <yl/discord/files.hpp>
 #include <chrono>
 #include <compare>
 #include <cstdint>
@@ -89,6 +90,7 @@ struct MessageOptions {
     std::string content;
     std::vector<Embed> embeds;
     AllowedMentions allowed_mentions;
+    std::vector<FileUpload> files;
 };
 
 struct MessageEditOptions {
@@ -96,6 +98,20 @@ struct MessageEditOptions {
     // nullopt preserves existing embeds; an empty vector removes them.
     std::optional<std::vector<Embed>> embeds;
     AllowedMentions allowed_mentions;
+    // Must be explicit when uploading new files: omitted preserves; empty removes all old files.
+    std::optional<std::vector<Snowflake>> retained_attachment_ids;
+    std::vector<FileUpload> files;
+};
+
+struct Attachment {
+    Snowflake id;
+    std::string filename;
+    std::string description;
+    std::string content_type;
+    std::uint64_t size = 0;
+    std::string url;
+    std::string proxy_url;
+    bool ephemeral = false;
 };
 
 YL_DISCORD_EXPORT void validate_message_options(const MessageOptions& options);
@@ -109,6 +125,7 @@ struct YL_DISCORD_EXPORT Message {
     User author;
     std::string content;
     std::vector<Embed> embeds;
+    std::vector<Attachment> attachments;
 
     [[nodiscard]] task<Message> reply(std::string content) const;
     [[nodiscard]] task<Message> reply(MessageOptions options) const;

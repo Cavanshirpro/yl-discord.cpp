@@ -37,10 +37,12 @@ public:
 private:
     User self_;
     std::uint64_t next_id_ = 1;
+    std::uint64_t next_attachment_id_ = 1'000'000;
     std::vector<MessageRequest> sent_;
     std::vector<MessageAction> actions_;
     std::map<std::pair<std::uint64_t, std::uint64_t>, Message> messages_;
     Message& require(Snowflake channel, Snowflake message);
+    std::vector<Attachment> create_attachments(const std::vector<FileUpload>& files);
 };
 
 } // namespace yl::discord::testing

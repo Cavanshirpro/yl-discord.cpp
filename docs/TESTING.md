@@ -44,6 +44,12 @@ An additional malformed-discovery scenario checks that invalid JSON fails before
 WebSocket connection and exposes only a generic ProtocolError. Every fixture
 request also verifies the HTTP User-Agent against VERSION.
 
+The file suite validates immutable shared bytes, binary/NUL text buffers, byte/count
+caps, filename/MIME/description constraints, explicit retention, offline attachment
+snapshots and older transport rejection. Two additional network cases verify real
+multipart encoding, 429 replay, UTF-8 filenames, binary bytes, retained/new/cleared
+attachments, file-only replies and cancellation during a pending 8 MiB upload.
+
 `tests/consumer` links/runs against the installed CMake package. Conan's
 `test_package` checks an actual command/reply through the installed dependency.
 CI also relocates CMake installation prefixes and tests shared/static builds.

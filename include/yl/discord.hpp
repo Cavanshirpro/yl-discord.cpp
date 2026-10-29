@@ -8,6 +8,7 @@
 #include <yl/discord/commands.hpp>
 #include <yl/discord/events.hpp>
 #include <yl/discord/embeds.hpp>
+#include <yl/discord/files.hpp>
 #include <yl/discord/models.hpp>
 #include <yl/discord/network.hpp>
 #include <yl/discord/transport.hpp>

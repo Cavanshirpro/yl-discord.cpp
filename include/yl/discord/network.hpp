@@ -68,7 +68,8 @@ public:
 private:
     struct State;
     std::shared_ptr<State> state_;
-    static task<HttpResponse> request_impl(std::shared_ptr<State>, std::string, std::string, std::string);
+    static task<HttpResponse> request_impl(std::shared_ptr<State>, std::string, std::string, std::string,
+                                           std::shared_ptr<const std::vector<FileUpload>> files = {});
     static task<Message> send_impl(std::shared_ptr<State>, MessageRequest);
     static task<Message> message_impl(std::shared_ptr<State>, std::string method, Snowflake, Snowflake, MessageEditOptions);
     static task<> delete_impl(std::shared_ptr<State>, Snowflake, Snowflake);

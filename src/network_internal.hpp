@@ -28,6 +28,7 @@ std::string resume_payload(const std::string& token, const std::string& session,
 std::string message_payload(const MessageRequest& request);
 std::string edit_message_payload(const MessageEditOptions& options);
 std::vector<Embed> parse_embeds(const Json& data);
+std::vector<Attachment> parse_attachments(const Json& data);
 Message parse_message_response(const std::string& body);
 std::string reaction_path(const std::string& emoji);
 
@@ -48,11 +49,13 @@ private:
 };
 
 struct CurlEngine;
+class MultipartForm;
 struct Transfer {
     CURL* easy = nullptr;
     curl_slist* headers = nullptr;
     HttpResponse response;
     std::string body;
+    std::unique_ptr<MultipartForm> upload;
     std::size_t limit;
     asio::steady_timer completion;
     std::weak_ptr<CurlEngine> engine;

@@ -49,7 +49,7 @@ attachment:// references. Controls and unescaped whitespace are rejected, with
 an 8192-unit project cap per URL. Timestamp is a UTF-8 string capped at 128 units;
 provide ISO8601. Discord validates its date format and URL accessibility. The
 library does not fetch embed media or upload attachment:// resources for you.
-File uploads remain planned.
+File uploads use [FileUpload](FILES.md); the caller supplies file bytes explicitly.
 
 `validate_message_options(options)` / `validate_message_edit(options)` expose
 the same checks for explicit preflight. Validation failures use std::invalid_argument

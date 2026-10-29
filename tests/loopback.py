@@ -14,6 +14,8 @@ import threading
 import time
 import urllib.parse
 from pathlib import Path
+from email.parser import BytesParser
+from email import policy
 
 VERSION = (Path(__file__).resolve().parents[1] / 'VERSION').read_text().strip()
 
@@ -176,6 +178,9 @@ def handler_for(state):
 
         def do_PATCH(self):
             state.check(self.headers.get('Authorization') == 'Bot fixture-only-credential', 'Edit authorization missing')
+            if state.scenario == 'uploads':
+                self.upload_edit()
+                return
             data = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))))
             if state.scenario == 'embeds':
                 state.check(self.path == '/api/v10/channels/42/messages/401', 'Wrong rich edit path')
@@ -236,6 +241,15 @@ def handler_for(state):
 
         def do_POST(self):
             state.check(self.headers.get('Authorization') == 'Bot fixture-only-credential', 'Message authorization missing')
+            if state.scenario == 'upload-cancel':
+                state.check(self.headers.get('Content-Type', '').startswith('multipart/form-data;'), 'Missing cancellation multipart request')
+                state.last['upload_started'] = True
+                time.sleep(.3)  # Keep the large upload pending without draining its socket.
+                self.close_connection = True
+                return
+            if state.scenario == 'uploads':
+                self.upload_create()
+                return
             data = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))))
             if state.scenario == 'embeds':
                 state.check(self.path == '/api/v10/channels/42/messages', 'Wrong rich send path')
@@ -271,6 +285,73 @@ def handler_for(state):
             self.answer(200, {'id': str(message_id), 'channel_id': '42', 'content': state.last['content'],
                               'embeds': [{**embed, 'type': 'rich'} for embed in state.last['embeds']],
                               'author': {'id': '1', 'username': 'fixture-bot', 'bot': True}})
+
+        def upload_payload(self):
+            content_type = self.headers.get('Content-Type', '')
+            length = int(self.headers.get('Content-Length', 0))
+            if length > 25 * 1024 * 1024:
+                raise ValueError('Fixture received an oversized upload')
+            body = self.rfile.read(length)
+            if content_type.startswith('application/json'):
+                return json.loads(body), {}
+            state.check(content_type.startswith('multipart/form-data;'), 'File request must use multipart/form-data')
+            message = BytesParser(policy=policy.default).parsebytes(('Content-Type: ' + content_type + '\r\nMIME-Version: 1.0\r\n\r\n').encode() + body)
+            parts = {part.get_param('name', header='content-disposition'): part for part in message.iter_parts()}
+            state.check('payload_json' in parts, 'Multipart JSON payload missing')
+            data = json.loads(parts.pop('payload_json').get_payload(decode=True))
+            files = {name: {'filename': part.get_filename(), 'content_type': part.get_content_type(), 'bytes': part.get_payload(decode=True)}
+                     for name, part in parts.items()}
+            return data, files
+
+        def attachment(self, identifier, file, description=None):
+            return {'id': str(identifier), 'filename': file['filename'], 'size': len(file['bytes']), 'description': description,
+                    'content_type': file['content_type'], 'url': 'https://cdn.example.invalid/' + file['filename']}
+
+        def upload_answer(self, identifier):
+            self.answer(200, {'id': str(identifier), 'channel_id': '42', 'content': state.last.get('content', ''),
+                'attachments': state.last['attachments'], 'embeds': state.last.get('embeds', []),
+                'author': {'id': '1', 'username': 'fixture-bot', 'bot': True}})
+
+        def upload_create(self):
+            state.check(self.path == '/api/v10/channels/42/messages', 'Wrong upload create path')
+            data, files = self.upload_payload()
+            state.posts += 1
+            state.check(data['allowed_mentions'] == {'parse': [], 'replied_user': False}, 'Upload mention policy changed')
+            if state.posts <= 2:
+                state.check(set(files) == {'files[0]', 'files[1]'}, 'File MIME part names changed')
+                state.check(files['files[0]'] == {'filename': 'image.png', 'content_type': 'image/png', 'bytes': bytes(range(256))}, 'Binary file bytes/header changed')
+                state.check(files['files[1]']['filename'] == 'notes-ü.txt' and files['files[1]']['bytes'] == 'hi\0ü\n'.encode(), 'UTF-8 filename or NUL file bytes changed')
+                state.check(data['attachments'] == [{'id': 0, 'filename': 'image.png', 'description': 'binary'}, {'id': 1, 'filename': 'notes-ü.txt'}],
+                            'Attachment placeholder IDs or descriptions changed')
+                state.check(data['embeds'][0]['image']['url'] == 'attachment://image.png', 'Attachment embed reference changed')
+                if state.posts == 1:
+                    state.last['first_upload'] = (data, files)
+                    self.answer(429, {'retry_after': .02, 'global': False})
+                    return
+                state.check(state.last['first_upload'] == (data, files), '429 retry did not rewind all upload bytes')
+                state.last['content'] = data['content']; state.last['embeds'] = data['embeds']
+                state.last['attachments'] = [self.attachment(901, files['files[0]'], 'binary'), self.attachment(902, files['files[1]'])]
+                self.upload_answer(501)
+            else:
+                state.check(data['message_reference']['message_id'] == '501' and files['files[0]']['bytes'] == b'reply', 'File-only reply changed')
+                state.last['content'] = data['content']; state.last['embeds'] = []
+                state.last['attachments'] = [self.attachment(904, files['files[0]'])]
+                self.upload_answer(502)
+
+        def upload_edit(self):
+            state.check(self.path == '/api/v10/channels/42/messages/501', 'Wrong attachment edit path')
+            data, files = self.upload_payload()
+            count = state.last.get('upload_patches', 0)
+            state.check('content' not in data and 'embeds' not in data, 'Attachment edit must preserve unrelated fields')
+            if count == 0:
+                state.check(data['attachments'] == [{'id': '901'}, {'id': 0, 'filename': 'append.txt'}] and
+                            files['files[0]']['bytes'] == b'append', 'Retained IDs/new file placeholders changed')
+                state.last['attachments'] = [state.last['attachments'][0], self.attachment(903, files['files[0]'])]
+            else:
+                state.check(data['attachments'] == [] and not files, 'Explicit attachment clear was not JSON-only')
+                state.last['attachments'] = []
+            state.last['upload_patches'] = count + 1
+            self.upload_answer(501)
 
         def websocket(self):
             query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
@@ -346,7 +427,7 @@ def handler_for(state):
 
 def main():
     executable = sys.argv[1]
-    for scenario in ('live', 'fragment', 'rest', 'messages', 'embeds', 'bad-discovery', 'timeout', 'cancel', 'cancel-transfer', 'fatal',
+    for scenario in ('live', 'fragment', 'rest', 'messages', 'embeds', 'bad-discovery', 'uploads', 'upload-cancel', 'timeout', 'cancel', 'cancel-transfer', 'fatal',
                      'missing-ack', 'handshake-timeout', 'close-handshake', 'pause-destroy'):
         state = State(scenario)
         server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler_for(state))
@@ -373,9 +454,13 @@ def main():
                 state.check(state.posts == 2 and state.last.get('patches') == 2, 'Rich message operation counts incorrect')
             if scenario == 'bad-discovery':
                 state.check(state.connections == 0, 'Malformed discovery must fail before connecting to Gateway')
+            if scenario == 'uploads':
+                state.check(state.posts == 3 and state.last.get('upload_patches') == 2, 'Upload retry/edit/reply counts changed')
+            if scenario == 'upload-cancel':
+                state.check(state.last.get('upload_started'), 'Cancellation did not interrupt an active upload')
             if scenario in ('missing-ack', 'handshake-timeout'):
                 state.check(state.connections == 3, 'Missing ACK did not consume bounded reconnect attempts')
-            if scenario in ('cancel', 'cancel-transfer', 'close-handshake'):
+            if scenario in ('cancel', 'cancel-transfer', 'close-handshake', 'upload-cancel'):
                 state.check(time.monotonic() - began < 2, 'Shutdown did not interrupt rate-limit waiting')
             if state.errors:
                 raise RuntimeError('; '.join(state.errors))

@@ -58,6 +58,7 @@ lazy: await or spawn them. Blocking I/O and CPU work still block the event loop.
 - Message events, prefix commands, aliases, quoted arguments and Context send/reply.
 - Bound message fetch/edit/delete and Unicode/custom own reactions.
 - Typed rich embeds, preserve/clear edits, Unicode-aware limits and explicit mention whitelists.
+- Shared binary upload buffers, multipart sends/replies and explicit attachment retention.
 - Typed/optional command parameters, custom converters, async checks, bounded cooldowns and opt-in help.
 - Client/Bot subclasses, multiple listeners and Cog-owned class callbacks.
 - Cog-wide command removal that retains callbacks already in progress.

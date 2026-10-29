@@ -4,5 +4,6 @@
 #pragma once
 #include <yl/discord/models.hpp>
 namespace yl::discord::detail {
-void validate_message_parts(std::string_view content, const std::vector<Embed>& embeds, const AllowedMentions& mentions);
+void validate_message_parts(std::string_view content, const std::vector<Embed>& embeds, const AllowedMentions& mentions,
+                            const std::vector<FileUpload>& files);
 }

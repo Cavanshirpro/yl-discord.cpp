@@ -41,6 +41,7 @@ Message parse_message(const Json& data) {
     message.author = parse_user(data.at("author"));
     message.content = data.value("content", std::string{});
     if (data.contains("embeds")) message.embeds = parse_embeds(data.at("embeds"));
+    if (data.contains("attachments")) message.attachments = parse_attachments(data.at("attachments"));
     return message;
 }
 Connection::Connection(asio::any_io_executor executor, ConnectionOptions options, Intents intents)

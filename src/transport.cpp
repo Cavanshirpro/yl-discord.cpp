@@ -13,7 +13,7 @@ task<Message> MessageTransport::edit_message(Snowflake, Snowflake, std::string) 
 }
 task<Message> MessageTransport::edit_message(Snowflake channel, Snowflake message, MessageEditOptions options) {
     validate_message_edit(options);
-    if (options.embeds || options.allowed_mentions != AllowedMentions{})
+    if (options.embeds || options.allowed_mentions != AllowedMentions{} || options.retained_attachment_ids || !options.files.empty())
         throw std::logic_error("This transport does not support structured message edits");
     co_return co_await edit_message(channel, message, std::move(*options.content));
 }

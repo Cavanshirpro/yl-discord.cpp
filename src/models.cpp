@@ -39,7 +39,7 @@ task<Message> Message::send_impl(Message source, MessageOptions options, bool re
     source.require_transport();
     validate_message_options(options);
     MessageRequest request{source.channel_id, std::move(options.content), std::nullopt,
-                           std::move(options.embeds), std::move(options.allowed_mentions)};
+                           std::move(options.embeds), std::move(options.allowed_mentions), std::move(options.files)};
     if (reply) {
         request.reply_to = source.id;
     }

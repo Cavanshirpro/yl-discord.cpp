@@ -132,6 +132,9 @@ See the complete [class example](../examples/class_bot.cpp).
 - **Embed / MessageOptions / MessageEditOptions / AllowedMentions:** owned rich
   fields, typed outgoing validation and explicit mention control. All send/reply
   methods accept MessageOptions; edit methods accept MessageEditOptions. See [embeds](EMBEDS.md).
+- **FileUpload / Attachment:** immutable shared request bytes and owned response
+  metadata. MessageOptions::files uploads bytes; MessageEditOptions adds files and
+  explicit retained_attachment_ids. Message::attachments contains snapshots. See [files](FILES.md).
 - **Ready:** `user`. Dispatching Ready does not authenticate a session.
 - **RawEvent:** `name`, owned `json`, optional `sequence`. Built-in Gateway dispatches
   provide the full JSON envelope alongside supported typed events. Custom raw

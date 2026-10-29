@@ -53,6 +53,8 @@ Discord, which decides whether other message content makes that edit valid.
 MessageOptions and MessageEditOptions add rich embeds and deliberate mention
 policies; string overloads retain the defaults above. See the [embed guide](EMBEDS.md)
 for preserving versus clearing optional fields and preflight validation.
+MessageOptions::files adds binary uploads; explicit retained_attachment_ids on
+structured edits determines old files to keep. See [attachments](FILES.md).
 
 Emoji input is raw UTF-8, `name:id`, `<:name:id>` or `<a:name:id>`. The helper
 URL-encodes it as a single path component; do not pre-encode it. Empty values,

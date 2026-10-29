@@ -49,6 +49,16 @@ Json embeds_payload(const std::vector<Embed>& embeds) {
     for (const auto& embed : embeds) result.push_back(embed_payload(embed));
     return result;
 }
+Json attachment_payload(const std::vector<FileUpload>& files, const std::vector<Snowflake>& retained = {}) {
+    auto result = Json::array();
+    for (auto id : retained) result.push_back({{"id", id.str()}});
+    for (std::size_t i = 0; i < files.size(); ++i) {
+        Json entry{{"id", i}, {"filename", files[i].filename}};
+        if (!files[i].description.empty()) entry["description"] = files[i].description;
+        result.push_back(std::move(entry));
+    }
+    return result;
+}
 } // namespace
 // Keep JSON expression templates out of coroutine state-machine construction.
 std::string heartbeat_payload(std::optional<std::uint64_t> sequence) {
@@ -71,6 +81,7 @@ std::string resume_payload(const std::string& token, const std::string& session,
 std::string message_payload(const MessageRequest& request) {
     Json body{{"content", request.content}, {"allowed_mentions", mention_payload(request.allowed_mentions)}};
     if (!request.embeds.empty()) body["embeds"] = embeds_payload(request.embeds);
+    if (!request.files.empty()) body["attachments"] = attachment_payload(request.files);
     if (request.reply_to) body["message_reference"] = {{"message_id", request.reply_to->str()}, {"channel_id", request.channel_id.str()}};
     return body.dump();
 }
@@ -79,6 +90,7 @@ std::string edit_message_payload(const MessageEditOptions& options) {
     Json body{{"allowed_mentions", mention_payload(options.allowed_mentions)}};
     if (options.content) body["content"] = *options.content;
     if (options.embeds) body["embeds"] = embeds_payload(*options.embeds);
+    if (options.retained_attachment_ids) body["attachments"] = attachment_payload(options.files, *options.retained_attachment_ids);
     return body.dump();
 }
 std::vector<Embed> parse_embeds(const Json& data) {
@@ -103,6 +115,28 @@ std::vector<Embed> parse_embeds(const Json& data) {
         if (value.contains("image")) embed.image_url = value.at("image").value("url", std::string{});
         if (value.contains("thumbnail")) embed.thumbnail_url = value.at("thumbnail").value("url", std::string{});
         result.push_back(std::move(embed));
+    }
+    return result;
+}
+std::vector<Attachment> parse_attachments(const Json& data) {
+    if (!data.is_array()) throw ProtocolError("Message attachments must be an array");
+    std::vector<Attachment> result;
+    for (const auto& value : data) {
+        Attachment attachment;
+        attachment.id = Snowflake{value.at("id").get<std::string>()};
+        attachment.filename = value.at("filename").get<std::string>();
+        const auto optional_text = [&](const char* key) {
+            return value.contains(key) && !value.at(key).is_null() ? value.at(key).get<std::string>() : std::string{};
+        };
+        attachment.description = optional_text("description");
+        attachment.content_type = optional_text("content_type");
+        const auto& size = value.at("size");
+        if (!size.is_number_integer() || size < 0) throw ProtocolError("Invalid attachment size");
+        attachment.size = size.get<std::uint64_t>();
+        attachment.url = value.at("url").get<std::string>();
+        attachment.proxy_url = optional_text("proxy_url");
+        attachment.ephemeral = value.value("ephemeral", false);
+        result.push_back(std::move(attachment));
     }
     return result;
 }

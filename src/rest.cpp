@@ -3,6 +3,7 @@
 // Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
 #include "network_internal.hpp"
 #include "message_validation.hpp"
+#include "upload_internal.hpp"
 #include <algorithm>
 #include <cmath>
 #include <charconv>
@@ -103,7 +104,8 @@ void RestClient::cancel() {
 task<HttpResponse> RestClient::request(std::string method, std::string route, std::string body) {
     return request_impl(state_, std::move(method), std::move(route), std::move(body));
 }
-task<HttpResponse> RestClient::request_impl(std::shared_ptr<State> state, std::string method, std::string route, std::string body) {
+task<HttpResponse> RestClient::request_impl(std::shared_ptr<State> state, std::string method, std::string route, std::string body,
+                                          std::shared_ptr<const std::vector<FileUpload>> files) {
     if (state->token.empty()) throw std::logic_error("REST client is not authenticated");
     if (method != "GET" && method != "POST" && method != "PUT" && method != "PATCH" && method != "DELETE")
         throw std::invalid_argument("Unsupported HTTP method");
@@ -132,9 +134,13 @@ task<HttpResponse> RestClient::request_impl(std::shared_ptr<State> state, std::s
         curl_easy_setopt(transfer->easy, CURLOPT_CUSTOMREQUEST, method.c_str());
         const auto header = "Authorization: Bot " + state->token;
         transfer->headers = curl_slist_append(transfer->headers, header.c_str());
-        transfer->headers = curl_slist_append(transfer->headers, "Content-Type: application/json");
+        if (!files || files->empty()) transfer->headers = curl_slist_append(transfer->headers, "Content-Type: application/json");
         curl_easy_setopt(transfer->easy, CURLOPT_HTTPHEADER, transfer->headers);
-        if (!body.empty()) {
+        if (files && !files->empty()) {
+            transfer->upload = std::make_unique<detail::MultipartForm>(transfer->easy, body, *files);
+            if (curl_easy_setopt(transfer->easy, CURLOPT_MIMEPOST, transfer->upload->get()) != CURLE_OK)
+                throw TransportError("Could not schedule multipart upload");
+        } else if (!body.empty()) {
             curl_easy_setopt(transfer->easy, CURLOPT_POSTFIELDS, transfer->body.data());
             curl_easy_setopt(transfer->easy, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(transfer->body.size()));
         }
@@ -179,8 +185,11 @@ task<HttpResponse> RestClient::request_impl(std::shared_ptr<State> state, std::s
 
 task<Message> RestClient::send_message(MessageRequest request) { return send_impl(state_, std::move(request)); }
 task<Message> RestClient::send_impl(std::shared_ptr<State> state, MessageRequest request) {
-    detail::validate_message_parts(request.content, request.embeds, request.allowed_mentions);
-    auto response = co_await request_impl(state, "POST", "/channels/" + request.channel_id.str() + "/messages", detail::message_payload(request));
+    detail::validate_message_parts(request.content, request.embeds, request.allowed_mentions, request.files);
+    auto payload = detail::message_payload(request);
+    std::shared_ptr<const std::vector<FileUpload>> files;
+    if (!request.files.empty()) files = std::make_shared<const std::vector<FileUpload>>(std::move(request.files));
+    auto response = co_await request_impl(state, "POST", "/channels/" + request.channel_id.str() + "/messages", std::move(payload), std::move(files));
     co_return detail::parse_message_response(response.body);
 }
 
@@ -198,7 +207,9 @@ task<Message> RestClient::edit_message(Snowflake channel, Snowflake message, Mes
 task<Message> RestClient::message_impl(std::shared_ptr<State> state, std::string method, Snowflake channel, Snowflake message, MessageEditOptions options) {
     if (method == "PATCH") validate_message_edit(options);
     const auto body = method == "PATCH" ? detail::edit_message_payload(options) : std::string{};
-    auto response = co_await request_impl(state, std::move(method), "/channels/" + channel.str() + "/messages/" + message.str(), body);
+    std::shared_ptr<const std::vector<FileUpload>> files;
+    if (!options.files.empty()) files = std::make_shared<const std::vector<FileUpload>>(std::move(options.files));
+    auto response = co_await request_impl(state, std::move(method), "/channels/" + channel.str() + "/messages/" + message.str(), body, std::move(files));
     co_return detail::parse_message_response(response.body);
 }
 task<> RestClient::delete_message(Snowflake channel, Snowflake message) { return delete_impl(state_, channel, message); }

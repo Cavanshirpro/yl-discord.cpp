@@ -30,7 +30,7 @@ if(NOT TARGET asio::asio)
 endif()
 
 configure_file(include/yl/discord/version.hpp.in generated/yl/discord/version.hpp @ONLY)
-add_library(yl_discord src/client.cpp src/commands.cpp src/models.cpp src/embeds.cpp src/transport.cpp src/events.cpp src/memory_transport.cpp
+add_library(yl_discord src/client.cpp src/commands.cpp src/models.cpp src/embeds.cpp src/files.cpp src/multipart.cpp src/transport.cpp src/events.cpp src/memory_transport.cpp
     src/curl_engine.cpp src/rest.cpp src/gateway.cpp src/protocol.cpp)
 add_library(yl::discord ALIAS yl_discord)
 set_target_properties(yl_discord PROPERTIES EXPORT_NAME discord
@@ -102,7 +102,7 @@ else()
 endif()
 
 if(YL_DISCORD_BUILD_EXAMPLES)
-    foreach(example IN ITEMS offline_bot class_bot ping_bot command_bot wait_for_bot embed_bot)
+    foreach(example IN ITEMS offline_bot class_bot ping_bot command_bot wait_for_bot embed_bot upload_bot)
         add_executable(yl_${example} examples/${example}.cpp)
         target_link_libraries(yl_${example} PRIVATE yl::discord)
     endforeach()
@@ -126,6 +126,10 @@ if(YL_DISCORD_BUILD_TESTS)
     target_link_libraries(yl_discord_embed_tests PRIVATE yl::discord)
     add_test(NAME yl_discord_embeds COMMAND yl_discord_embed_tests)
     set_tests_properties(yl_discord_embeds PROPERTIES TIMEOUT 30)
+    add_executable(yl_discord_file_tests tests/files.cpp)
+    target_link_libraries(yl_discord_file_tests PRIVATE yl::discord)
+    add_test(NAME yl_discord_files COMMAND yl_discord_file_tests)
+    set_tests_properties(yl_discord_files PROPERTIES TIMEOUT 30)
     find_package(Python3 3.10 COMPONENTS Interpreter REQUIRED)
     add_executable(yl_discord_network_tests tests/network.cpp)
     target_link_libraries(yl_discord_network_tests PRIVATE yl::discord)

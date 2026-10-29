@@ -125,6 +125,41 @@ task<> embeds_scenario(Client& client) {
     catch (const std::invalid_argument&) { invalid = true; }
     check(invalid, "Invalid payload was not rejected before HTTP");
 }
+
+task<> uploads_scenario(Client& client) {
+    std::vector<std::uint8_t> bytes;
+    for (unsigned i = 0; i < 256; ++i) bytes.push_back(static_cast<std::uint8_t>(i));
+    FileUpload binary("image.png", std::move(bytes)); binary.content_type = "image/png"; binary.description = "binary";
+    const std::string text = std::string{"hi\0", 3} + "\xc3\xbc\n";
+    auto notes = FileUpload::text("notes-\xc3\xbc.txt", text);
+    MessageOptions options; options.content = "files"; options.files = {binary, notes};
+    options.embeds.push_back(Embed{.title = "Files", .image_url = "attachment://image.png"});
+    auto message = co_await client.send_message(Snowflake{42}, options);
+    check(message.attachments.size() == 2 && message.attachments[0].id == Snowflake{901} &&
+        message.attachments[0].size == 256 && message.attachments[1].size == text.size(), "Attachment metadata parsing failed");
+    MessageEditOptions append; append.retained_attachment_ids = std::vector<Snowflake>{message.attachments[0].id};
+    append.files.push_back(FileUpload::text("append.txt", "append"));
+    auto updated = co_await message.edit(append);
+    check(updated.attachments.size() == 2 && updated.attachments[0].id == Snowflake{901} &&
+          updated.attachments[1].filename == "append.txt", "Retained/new attachment edit failed");
+    MessageEditOptions clear; clear.retained_attachment_ids = std::vector<Snowflake>{};
+    auto cleared = co_await updated.edit(clear);
+    check(cleared.attachments.empty() && message.attachments.size() == 2, "Attachment clear mutated a prior snapshot");
+    MessageOptions reply; reply.files.push_back(FileUpload::text("reply.txt", "reply"));
+    auto response = co_await cleared.reply(reply);
+    check(response.content.empty() && response.attachments.size() == 1 && response.attachments[0].filename == "reply.txt", "File-only reply failed");
+    auto invalid = FileUpload::text("bad\r\nheader.txt", "bad");
+    MessageOptions rejected; rejected.files.push_back(invalid);
+    bool failed = false;
+    try { (void)co_await client.send_message(Snowflake{42}, rejected); }
+    catch (const std::invalid_argument&) { failed = true; }
+    check(failed, "Invalid filename was sent over HTTP");
+}
+task<> upload_until_cancelled(Client& client) {
+    MessageOptions options;
+    options.files.emplace_back("pending.bin", std::vector<std::uint8_t>(8 * 1024 * 1024));
+    (void)co_await client.send_message(Snowflake{42}, std::move(options));
+}
 }
 
 int main(int argc, char** argv) {
@@ -147,11 +182,13 @@ int main(int argc, char** argv) {
             // A server-requested Resume is exercised before the second command.
             if (replies == 2 || scenario == "fragment") bot.close();
         });
-        if (scenario == "rest" || scenario == "timeout" || scenario == "cancel" || scenario == "cancel-transfer" || scenario == "messages" || scenario == "embeds") {
+        if (scenario == "rest" || scenario == "timeout" || scenario == "cancel" || scenario == "cancel-transfer" || scenario == "messages" || scenario == "embeds" || scenario == "uploads" || scenario == "upload-cancel") {
             bot.rest().authenticate("fixture-only-credential");
             if (scenario == "rest") bot.spawn(rest_scenario(bot));
             if (scenario == "messages") bot.spawn(message_operations_scenario(bot));
             if (scenario == "embeds") bot.spawn(embeds_scenario(bot));
+            if (scenario == "uploads") bot.spawn(uploads_scenario(bot));
+            if (scenario == "upload-cancel") { bot.spawn(upload_until_cancelled(bot)); bot.spawn(close_soon(bot)); }
             if (scenario == "timeout") bot.spawn(timeout_scenario(bot));
             if (scenario == "cancel") { bot.spawn(cancel_request(bot)); bot.spawn(close_soon(bot)); }
             if (scenario == "cancel-transfer") { bot.spawn(bot.rest().request("GET", "/slow")); bot.spawn(close_soon(bot)); }

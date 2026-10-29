@@ -15,6 +15,8 @@ Build with the [project instructions](../docs/BUILDING.md).
   and a removable observation listener. Makes no network calls.
 - [embed_bot.cpp](embed_bot.cpp): embed-only replies, owned rich snapshots and
   explicit structured edits. Makes no network calls.
+- [upload_bot.cpp](upload_bot.cpp): in-memory reports, attachment metadata and
+  appending files while retaining existing IDs. Makes no network calls.
 
 ```sh
 ./build/default/yl_offline_bot
@@ -22,13 +24,14 @@ Build with the [project instructions](../docs/BUILDING.md).
 ./build/default/yl_command_bot
 ./build/default/yl_wait_for_bot
 ./build/default/yl_embed_bot
+./build/default/yl_upload_bot
 # Set DISCORD_BOT_TOKEN before intentionally running:
 ./build/default/yl_ping_bot
 ```
 
 On Windows add `.exe`; for the PowerShell preset use `mingw64` instead of
 `default` and keep its runtime on PATH. CI compiles all examples, runs only the
-five offline examples and uses loopback fixtures for network tests.
+six offline examples and uses loopback fixtures for network tests.
 
 The [API](../docs/API.md) explains task ownership and the distinction between
 `close()` (network shutdown) and `stop()` (event-loop pause).

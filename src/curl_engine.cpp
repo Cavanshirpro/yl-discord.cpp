@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Cavanshirpro
 // Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
 #include "network_internal.hpp"
+#include "upload_internal.hpp"
 #include <yl/discord/version.hpp>
 #include <algorithm>
 #include <array>
@@ -108,6 +109,7 @@ Transfer::Transfer(asio::any_io_executor executor, const ConnectionOptions& opti
 }
 Transfer::~Transfer() {
     if (auto owner = engine.lock()) owner->detach(easy);
+    upload.reset();
     if (easy) curl_easy_cleanup(easy);
     curl_slist_free_all(headers);
 }

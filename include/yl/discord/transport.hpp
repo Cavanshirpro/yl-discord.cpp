@@ -16,6 +16,7 @@ struct MessageRequest {
     std::optional<Snowflake> reply_to;
     std::vector<Embed> embeds;
     AllowedMentions allowed_mentions;
+    std::vector<FileUpload> files;
 };
 
 // Implementations must suspend for I/O rather than blocking the event-loop thread.
