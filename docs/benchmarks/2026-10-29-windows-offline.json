@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "workload": "offline prebuilt-message dispatch -> prefix ping -> in-memory reply",
+  "measured_at_utc": "2026-10-29T05:27:05.691202+00:00",
+  "label": "Windows x64 development desktop; other applications running; MinGW shared Release -O3",
+  "platform": "Windows-11-10.0.22631-SP0",
+  "architecture": "AMD64",
+  "source_commit": "54fce8924f2bb7d33d3ea58ca181a2dd4be5bdd8",
+  "source_tree_dirty": false,
+  "iterations": 10000,
+  "batch_size": 128,
+  "repeats": 5,
+  "summary": {
+    "cpp": {
+      "commands_per_second": 219295.8411,
+      "peak_resident_bytes": 13676544,
+      "latency_us": {
+        "p50": 226.1,
+        "p95": 556,
+        "p99": 763.7
+      }
+    },
+    "python": {
+      "commands_per_second": 24072.09302997361,
+      "peak_resident_bytes": 71081984,
+      "latency_us": {
+        "p50": 2260.1,
+        "p95": 4711.3,
+        "p99": 7755.1
+      }
+    }
+  },
+  "samples": {
+    "cpp": [
+      {
+        "implementation": "yl-discord.cpp",
+        "version": "0.4.0",
+        "compiler": "GCC 16.2.0",
+        "configuration": "Release",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.0454432,
+        "commands_per_second": 220054.9257,
+        "latency_us": {
+          "p50": 226,
+          "p95": 476.1,
+          "p99": 674.5
+        },
+        "peak_resident_bytes": 13680640
+      },
+      {
+        "implementation": "yl-discord.cpp",
+        "version": "0.4.0",
+        "compiler": "GCC 16.2.0",
+        "configuration": "Release",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.0493965,
+        "commands_per_second": 202443.493,
+        "latency_us": {
+          "p50": 236.2,
+          "p95": 586.3,
+          "p99": 763.7
+        },
+        "peak_resident_bytes": 13676544
+      },
+      {
+        "implementation": "yl-discord.cpp",
+        "version": "0.4.0",
+        "compiler": "GCC 16.2.0",
+        "configuration": "Release",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.0621375,
+        "commands_per_second": 160933.4138,
+        "latency_us": {
+          "p50": 285.5,
+          "p95": 776.6,
+          "p99": 1160.3
+        },
+        "peak_resident_bytes": 13676544
+      },
+      {
+        "implementation": "yl-discord.cpp",
+        "version": "0.4.0",
+        "compiler": "GCC 16.2.0",
+        "configuration": "Release",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.0456005,
+        "commands_per_second": 219295.8411,
+        "latency_us": {
+          "p50": 225.5,
+          "p95": 556,
+          "p99": 829.2
+        },
+        "peak_resident_bytes": 13676544
+      },
+      {
+        "implementation": "yl-discord.cpp",
+        "version": "0.4.0",
+        "compiler": "GCC 16.2.0",
+        "configuration": "Release",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.0450117,
+        "commands_per_second": 222164.4595,
+        "latency_us": {
+          "p50": 226.1,
+          "p95": 456.9,
+          "p99": 673.8
+        },
+        "peak_resident_bytes": 13672448
+      }
+    ],
+    "python": [
+      {
+        "implementation": "discord.py",
+        "version": "2.7.1",
+        "python": "3.13.5",
+        "configuration": "CPython default GC",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.5901563000000002,
+        "commands_per_second": 16944.66364249606,
+        "latency_us": {
+          "p50": 3147.9,
+          "p95": 6630.6,
+          "p99": 13199.5
+        },
+        "peak_resident_bytes": 71081984
+      },
+      {
+        "implementation": "discord.py",
+        "version": "2.7.1",
+        "python": "3.13.5",
+        "configuration": "CPython default GC",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.37646449999999976,
+        "commands_per_second": 26562.929572376695,
+        "latency_us": {
+          "p50": 2192.8,
+          "p95": 4022.9,
+          "p99": 4980.7
+        },
+        "peak_resident_bytes": 71135232
+      },
+      {
+        "implementation": "discord.py",
+        "version": "2.7.1",
+        "python": "3.13.5",
+        "configuration": "CPython default GC",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.4725128999999999,
+        "commands_per_second": 21163.443368424443,
+        "latency_us": {
+          "p50": 2670.9,
+          "p95": 5722.7,
+          "p99": 7932.3
+        },
+        "peak_resident_bytes": 70914048
+      },
+      {
+        "implementation": "discord.py",
+        "version": "2.7.1",
+        "python": "3.13.5",
+        "configuration": "CPython default GC",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.4154188,
+        "commands_per_second": 24072.09302997361,
+        "latency_us": {
+          "p50": 2258.4,
+          "p95": 4438.2,
+          "p99": 7755.1
+        },
+        "peak_resident_bytes": 71049216
+      },
+      {
+        "implementation": "discord.py",
+        "version": "2.7.1",
+        "python": "3.13.5",
+        "configuration": "CPython default GC",
+        "iterations": 10000,
+        "batch_size": 128,
+        "dispatch_seconds": 0.39907540000000025,
+        "commands_per_second": 25057.921385282065,
+        "latency_us": {
+          "p50": 2260.1,
+          "p95": 4711.3,
+          "p99": 6100.6
+        },
+        "peak_resident_bytes": 71237632
+      }
+    ]
+  },
+  "limitations": [
+    "No Gateway, HTTP, TLS, rate limits, parsing benchmark or real Discord account.",
+    "Input model construction and startup are excluded from dispatch timing; peak process memory includes startup.",
+    "Both fixtures retain reply requests and message snapshots; model/features/cache implementations differ.",
+    "This single-host synthetic workload is not an end-to-end or feature-equivalent bot comparison."
+  ]
+}

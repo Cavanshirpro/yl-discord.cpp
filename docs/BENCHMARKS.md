@@ -5,6 +5,27 @@ The optional benchmark measures prebuilt incoming Message dispatch, a prefix
 batch-sensitive p50/p95/p99 completion latency and peak resident process memory.
 It measures a synthetic framework path, not live Discord performance.
 
+## Recorded sample — 2026-10-29
+
+One Windows 11 AMD64 development desktop run used 10,000 events per process,
+batch size 128, five fresh-process repeats and alternating implementation order.
+Other applications were running, so this is an uncontrolled local sample.
+C++ used GCC 16.2.0, shared Release with -O3; Python used CPython 3.13.5 and
+discord.py 2.7.1. The source tree was clean at commit
+`54fce8924f2bb7d33d3ea58ca181a2dd4be5bdd8`.
+
+Medians across those five processes:
+
+| Implementation | Commands/s | p50 (µs) | p95 (µs) | p99 (µs) | Peak resident (MiB) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| yl-discord.cpp 0.4.0 | 219,296 | 226.1 | 556.0 | 763.7 | 13.04 |
+| discord.py 2.7.1 | 24,072 | 2,260.1 | 4,711.3 | 7,755.1 | 67.79 |
+
+[All raw samples and environment metadata](benchmarks/2026-10-29-windows-offline.json)
+are retained. These numbers apply only to the fixture below. Model/feature sets,
+startup costs, retained fixture storage and instrumentation differ; this table
+does not establish equivalent live-bot performance or general superiority.
+
 ## Reproduce
 
 Configure with the same [dependencies](BUILDING.md) as the library, using Release:
