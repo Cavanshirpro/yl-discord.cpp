@@ -5,6 +5,7 @@
 #include "message_validation.hpp"
 #include <algorithm>
 #include <cmath>
+#include <charconv>
 #include <cstdlib>
 #include <sstream>
 
@@ -12,11 +13,11 @@ namespace yl::discord {
 namespace {
 using namespace detail;
 std::optional<double> seconds(std::string_view text) {
-    try {
-        std::size_t read = 0;
-        const double value = std::stod(std::string(text), &read);
-        if (read == text.size() && std::isfinite(value) && value >= 0 && value <= 86'400) return value;
-    } catch (...) {}
+    if (text.empty()) return {};
+    double value = 0;
+    const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
+    if (parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size() &&
+        std::isfinite(value) && value >= 0 && value <= 86'400) return value;
     return {};
 }
 std::chrono::milliseconds milliseconds(double value) {

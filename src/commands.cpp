@@ -282,10 +282,10 @@ task<> Bot::on_command_error(Context, std::exception_ptr error) {
 }
 
 void Bot::handle_message(Message message) {
-    Client::handle_message(message);
     if (!message.author.bot && message.content.starts_with(prefix_)) {
+        Client::handle_message(message);
         spawn(process_commands(std::move(message)), "commands");
-    }
+    } else Client::handle_message(std::move(message));
 }
 
 task<> Bot::process_commands(Message message) {

@@ -77,29 +77,30 @@ void Client::dispatch(Message message) {
 }
 
 void Client::dispatch(Ready event) {
-    asio::post(io_, [this, event = std::move(event)] {
+    asio::post(io_, [this, event = std::move(event)]() mutable {
         const auto handlers = ready_handlers_->snapshot();
         ready_handlers_->publish(event);
-        spawn(invoke_hook(this, &Client::on_ready, event), "on_ready");
         for (const auto& handler : handlers) {
             spawn(invoke(handler, event), "ready listener");
         }
+        spawn(invoke_hook(this, &Client::on_ready, std::move(event)), "on_ready");
     });
 }
 
 void Client::dispatch(RawEvent event) {
-    asio::post(io_, [this, event = std::move(event)] {
+    asio::post(io_, [this, event = std::move(event)]() mutable {
         const auto handlers = raw_handlers_->snapshot();
         raw_handlers_->publish(event);
-        spawn(invoke_hook(this, &Client::on_raw_event, event), "on_raw_event:" + event.name);
         for (const auto& handler : handlers) {
             spawn(invoke(handler, event), "raw listener:" + event.name);
         }
+        auto source = "on_raw_event:" + event.name;
+        spawn(invoke_hook(this, &Client::on_raw_event, std::move(event)), std::move(source));
     });
 }
 
 void Client::handle_message(Message message) {
-    spawn(invoke_hook(this, &Client::on_message, message), "on_message");
+    spawn(invoke_hook(this, &Client::on_message, std::move(message)), "on_message");
 }
 
 void Client::spawn(task<> work, std::string source) {

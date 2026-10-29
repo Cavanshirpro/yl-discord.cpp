@@ -13,6 +13,9 @@ import sys
 import threading
 import time
 import urllib.parse
+from pathlib import Path
+
+VERSION = (Path(__file__).resolve().parents[1] / 'VERSION').read_text().strip()
 
 
 class State:
@@ -79,6 +82,13 @@ def handler_for(state):
         def log_message(self, *_):
             pass
 
+        def parse_request(self):
+            valid = super().parse_request()
+            if valid:
+                state.check(self.headers.get('User-Agent') == f'DiscordBot (https://github.com/Cavanshirpro/yl-discord.cpp, {VERSION})',
+                            'HTTP User-Agent version differs from VERSION')
+            return valid
+
         def answer(self, code, body, headers=None):
             data = json.dumps(body).encode()
             self.send_response(code)
@@ -89,7 +99,7 @@ def handler_for(state):
             self.end_headers()
             try:
                 self.wfile.write(data)
-            except (BrokenPipeError, ConnectionResetError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 pass
 
         def do_GET(self):
@@ -318,7 +328,7 @@ def handler_for(state):
                         else:
                             send_frame(self.connection, message)
                         command_sent = True
-            except (EOFError, ConnectionResetError, BrokenPipeError):
+            except (EOFError, ConnectionResetError, BrokenPipeError, ConnectionAbortedError):
                 pass
             except Exception as error:
                 state.errors.append(type(error).__name__ + ': ' + str(error))
