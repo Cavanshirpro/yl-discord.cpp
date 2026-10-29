@@ -35,7 +35,8 @@ std::pair<std::string, std::string> route_key(const std::string& method, const s
             major = parts[i - 1] + ":" + parts[i];
             if (parts[i - 1] == "webhooks" && i + 1 < parts.size()) major += ":" + parts[i + 1];
         }
-        normalized += "/" + (numeric ? std::string(":id") : parts[i]);
+        const bool emoji = i > 0 && parts[i - 1] == "reactions";
+        normalized += "/" + (emoji ? std::string(":emoji") : numeric ? std::string(":id") : parts[i]);
     }
     return {normalized + "|" + major, major};
 }
@@ -178,7 +179,33 @@ task<Message> RestClient::send_message(MessageRequest request) { return send_imp
 task<Message> RestClient::send_impl(std::shared_ptr<State> state, MessageRequest request) {
     if (request.content.empty()) throw std::invalid_argument("Message content cannot be empty");
     auto response = co_await request_impl(state, "POST", "/channels/" + request.channel_id.str() + "/messages", detail::message_payload(request));
-    co_return detail::parse_message(detail::Json::parse(response.body));
+    co_return detail::parse_message_response(response.body);
+}
+
+task<Message> RestClient::fetch_message(Snowflake channel, Snowflake message) {
+    return message_impl(state_, "GET", channel, message, {});
+}
+task<Message> RestClient::edit_message(Snowflake channel, Snowflake message, std::string content) {
+    return message_impl(state_, "PATCH", channel, message, std::move(content));
+}
+task<Message> RestClient::message_impl(std::shared_ptr<State> state, std::string method, Snowflake channel, Snowflake message, std::string content) {
+    const auto body = method == "PATCH" ? detail::edit_message_payload(content) : std::string{};
+    auto response = co_await request_impl(state, std::move(method), "/channels/" + channel.str() + "/messages/" + message.str(), body);
+    co_return detail::parse_message_response(response.body);
+}
+task<> RestClient::delete_message(Snowflake channel, Snowflake message) { return delete_impl(state_, channel, message); }
+task<> RestClient::delete_impl(std::shared_ptr<State> state, Snowflake channel, Snowflake message) {
+    co_await request_impl(state, "DELETE", "/channels/" + channel.str() + "/messages/" + message.str(), {});
+}
+task<> RestClient::add_reaction(Snowflake channel, Snowflake message, std::string emoji) {
+    return reaction_impl(state_, channel, message, std::move(emoji), false);
+}
+task<> RestClient::remove_reaction(Snowflake channel, Snowflake message, std::string emoji) {
+    return reaction_impl(state_, channel, message, std::move(emoji), true);
+}
+task<> RestClient::reaction_impl(std::shared_ptr<State> state, Snowflake channel, Snowflake message, std::string emoji, bool remove) {
+    const auto route = "/channels/" + channel.str() + "/messages/" + message.str() + "/reactions/" + detail::reaction_path(emoji) + "/@me";
+    co_await request_impl(state, remove ? "DELETE" : "PUT", route, {});
 }
 std::string token_from_env(std::string_view name) {
     std::string variable(name);

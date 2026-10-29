@@ -36,7 +36,8 @@ Portal. Compression and generic task-group cancellation remain future work.
 - [ ] Slash commands, sync, interaction response/defer/followup.
 - [ ] Buttons, selects, modals and Views.
 - [ ] Guild, channel, member, role and permission APIs.
-- [ ] Embeds, attachments, editing/deletion and reactions.
+- [x] Message fetch/edit/delete and own-reaction helpers.
+- [ ] Embeds and attachments.
 - [x] Typed parameters, converters, checks, cooldowns and generated help.
 - [x] Cog-wide command removal with in-flight ownership.
 - [ ] Cog lifecycle hooks and managed background tasks.

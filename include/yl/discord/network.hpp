@@ -57,6 +57,11 @@ public:
     /// @brief Low-level request. Routes are API-relative and share all rate limits.
     [[nodiscard]] task<HttpResponse> request(std::string method, std::string route, std::string json_body = {});
     [[nodiscard]] task<Message> send_message(MessageRequest request) override;
+    [[nodiscard]] task<Message> fetch_message(Snowflake channel, Snowflake message) override;
+    [[nodiscard]] task<Message> edit_message(Snowflake channel, Snowflake message, std::string content) override;
+    [[nodiscard]] task<> delete_message(Snowflake channel, Snowflake message) override;
+    [[nodiscard]] task<> add_reaction(Snowflake channel, Snowflake message, std::string emoji) override;
+    [[nodiscard]] task<> remove_reaction(Snowflake channel, Snowflake message, std::string emoji) override;
     /// @brief Cancel pending requests/waits on this executor; a new Client is needed after closing.
     void cancel();
 private:
@@ -64,6 +69,9 @@ private:
     std::shared_ptr<State> state_;
     static task<HttpResponse> request_impl(std::shared_ptr<State>, std::string, std::string, std::string);
     static task<Message> send_impl(std::shared_ptr<State>, MessageRequest);
+    static task<Message> message_impl(std::shared_ptr<State>, std::string method, Snowflake, Snowflake, std::string);
+    static task<> delete_impl(std::shared_ptr<State>, Snowflake, Snowflake);
+    static task<> reaction_impl(std::shared_ptr<State>, Snowflake, Snowflake, std::string, bool);
 };
 
 /// @brief Read a raw bot token from an environment variable, without logging it.

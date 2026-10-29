@@ -175,6 +175,29 @@ task<Message> Client::send_message(Snowflake channel, std::string content) {
     return Message::send_impl(std::move(source), std::move(content), false);
 }
 
+Message Client::message_reference(Snowflake channel, Snowflake message) const {
+    Message result;
+    result.id = message;
+    result.channel_id = channel;
+    result.transport_ = transport_;
+    return result;
+}
+task<Message> Client::fetch_message(Snowflake channel, Snowflake message) {
+    return message_reference(channel, message).fetch();
+}
+task<Message> Client::edit_message(Snowflake channel, Snowflake message, std::string content) {
+    return message_reference(channel, message).edit(std::move(content));
+}
+task<> Client::delete_message(Snowflake channel, Snowflake message) {
+    return message_reference(channel, message).delete_message();
+}
+task<> Client::add_reaction(Snowflake channel, Snowflake message, std::string emoji) {
+    return message_reference(channel, message).add_reaction(std::move(emoji));
+}
+task<> Client::remove_reaction(Snowflake channel, Snowflake message, std::string emoji) {
+    return message_reference(channel, message).remove_reaction(std::move(emoji));
+}
+
 std::vector<TaskError> Client::take_errors() { return std::exchange(errors_, {}); }
 
 task<> Client::on_ready(Ready) { co_return; }

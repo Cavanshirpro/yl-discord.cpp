@@ -32,6 +32,11 @@ transport. Null custom transport is rejected. Copying is disabled.
 | `stop()` | Pause the event loop without cancelling tasks |
 | `spawn(task, source = "background")` | Start work on this Client's executor |
 | `send_message(channel_id, content)` | Return a lazy `task<Message>` |
+| `fetch_message(channel_id, message_id)` | Fetch a bound message snapshot |
+| `edit_message(channel_id, message_id, content)` | Return an updated bound snapshot |
+| `delete_message(channel_id, message_id)` | Delete a message |
+| `add_reaction(channel_id, message_id, emoji)` | Add this bot's reaction |
+| `remove_reaction(channel_id, message_id, emoji)` | Remove this bot's reaction |
 | `executor()` | Access `asio::any_io_executor` for advanced integration |
 | `options()` | Read configured ClientOptions |
 | `take_errors()` | Remove/return additional unhandled TaskErrors |
@@ -118,7 +123,9 @@ See the complete [class example](../examples/class_bot.cpp).
   The default numeric value is zero; it is not proof of a real Discord object.
 - **User:** `id`, `name`, `bot`.
 - **Message:** `id`, `channel_id`, optional `guild_id`, `author`, `content` and
-  `reply(content)`. Reply needs a transport bound through Client dispatch/send.
+  `reply(content)`, `fetch()`, `edit(content)`, `delete_message()`, `add_reaction(emoji)`
+  and `remove_reaction(emoji)`. Operations need a transport bound through Client.
+  Edits return new snapshots; they do not mutate older values. See [message operations](MESSAGES.md).
 - **Ready:** `user`. Dispatching Ready does not authenticate a session.
 - **RawEvent:** `name`, opaque `json`, optional `sequence`. No JSON parsing or
   automatic raw/high-level event pairing is performed yet.
@@ -135,11 +142,16 @@ Implement `MessageTransport::send_message(MessageRequest) -> task<Message>` for 
 alternative transport. MessageRequest owns `channel_id`, `content` and optional
 `reply_to`. An implementation must suspend for I/O instead of blocking the loop.
 Error reporting uses normal exceptions, propagated through the caller's task.
+Optional virtual fetch/edit/delete/reaction methods default to lazy unsupported
+operation errors, so send-only custom transports remain source-compatible.
 
 `testing::MemoryTransport(User self = ...)` records requests and returns
 synthetic messages. `sent()` returns a const reference to records. Access those
 records on the event-loop thread or after `run()` returns. It makes no network
 calls and does not emulate Discord's validation or rate limits.
+It also stores message snapshots, implements fetch/edit/delete/reaction operations,
+accepts seeded fixtures with `store(Message)` and records these in `actions()`.
+Its stored messages never retain a bound transport.
 
 ## Version information
 

@@ -19,7 +19,12 @@ int main() {
     // Exercise the public payload across the ABI with Win32 Unicode macros active.
     bot.spawn(transport->send_message(MessageRequest{Snowflake{42}, "transport probe", std::nullopt}));
     bot.command<int>("ping", [](Context ctx, int value) -> task<> {
-        co_await ctx.reply("Pong " + std::to_string(value) + "!");
+        auto sent = co_await ctx.reply("Pong " + std::to_string(value) + "!");
+        auto edited = co_await sent.edit("updated");
+        if ((co_await edited.fetch()).content != "updated") throw std::runtime_error("Installed edit/fetch failed");
+        co_await edited.add_reaction("fixture");
+        co_await edited.remove_reaction("fixture");
+        co_await edited.delete_message();
     }, {.aliases = {"p"}, .checks = {checks::dm_only()}, .cooldown = Cooldown{}});
     if (!bot.get_command("p") || bot.help_text("p").find("<integer>") == std::string::npos) return 1;
     Message message;
@@ -34,7 +39,7 @@ int main() {
         replied = replied || (request.content == "Pong 42!" && request.reply_to == Snowflake{100});
         probed = probed || (request.content == "transport probe" && !request.reply_to);
     }
-    if (transport->sent().size() != 2 || !replied || !probed) {
+    if (transport->sent().size() != 2 || transport->actions().size() != 5 || !replied || !probed) {
         return 1;
     }
     std::cout << "yl-discord.cpp " << version << ": installed package works\n";

@@ -100,7 +100,20 @@ def handler_for(state):
             now = time.monotonic()
             state.requests.append(self.path)
             port = self.server.server_address[1]
-            if self.path == '/api/v10/gateway/bot':
+            if state.scenario == 'messages':
+                if self.path == '/api/v10/channels/42/messages/321':
+                    if state.last.get('deleted'):
+                        self.answer(404, {'code': 10008})
+                    else:
+                        self.message_answer()
+                elif self.path.endswith('/322'):
+                    self.answer(200, 'malformed response')
+                elif self.path.endswith('/323'):
+                    self.answer(200, {'id': '323', 'channel_id': '42', 'author': []})
+                else:
+                    state.errors.append('Unexpected message GET path')
+                    self.answer(404, {})
+            elif self.path == '/api/v10/gateway/bot':
                 self.answer(200, {'url': f'ws://127.0.0.1:{port}/gateway', 'shards': 1,
                                   'session_start_limit': {'remaining': 20, 'total': 1000, 'reset_after': 5000, 'max_concurrency': 1}})
             elif self.path.endswith('/limited'):
@@ -139,6 +152,55 @@ def handler_for(state):
                 self.answer(429, {'retry_after': 60, 'global': True})
             else:
                 self.answer(404, {})
+
+        def message_answer(self):
+            self.answer(200, {'id': '321', 'channel_id': '42', 'content': state.last.get('content', 'initial'),
+                              'author': {'id': '1', 'username': 'fixture-bot', 'bot': True}})
+
+        def do_PATCH(self):
+            state.check(self.headers.get('Authorization') == 'Bot fixture-only-credential', 'Edit authorization missing')
+            data = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))))
+            if self.path.endswith('/324'):
+                self.answer(403, {'code': 50013})
+                return
+            state.check(self.path == '/api/v10/channels/42/messages/321', 'Wrong edit path')
+            state.check(data == {'content': 'edited @everyone <@7> "quoted"',
+                                'allowed_mentions': {'parse': [], 'replied_user': False}}, 'Edit payload or mention policy changed')
+            state.last['content'] = data['content']
+            self.message_answer()
+
+        def empty_answer(self):
+            self.send_response(204)
+            self.send_header('Content-Length', '0')
+            self.end_headers()
+
+        def reaction(self, remove):
+            state.check(self.headers.get('Authorization') == 'Bot fixture-only-credential', 'Reaction authorization missing')
+            state.check(int(self.headers.get('Content-Length', 0)) == 0, 'Reaction should have no JSON body')
+            parts = self.path.split('/')
+            state.check(len(parts) == 10 and parts[:8] == ['', 'api', 'v10', 'channels', '42', 'messages', '321', 'reactions']
+                        and parts[-1] == '@me', 'Wrong reaction path or path injection')
+            emoji = urllib.parse.unquote(parts[-2])
+            state.check(emoji in ('👍', 'party:123'), 'Reaction emoji was not encoded correctly')
+            state.last.setdefault('reactions', []).append((remove, emoji))
+            if not remove and emoji == '👍' and not state.last.get('reaction_limited'):
+                state.last['reaction_limited'] = True
+                self.answer(429, {'retry_after': .02, 'global': False})
+            else:
+                self.empty_answer()
+
+        def do_PUT(self):
+            self.reaction(False)
+
+        def do_DELETE(self):
+            if '/reactions/' in self.path:
+                self.reaction(True)
+                return
+            state.check(self.headers.get('Authorization') == 'Bot fixture-only-credential', 'Delete authorization missing')
+            state.check(self.path == '/api/v10/channels/42/messages/321', 'Wrong delete path')
+            state.check(int(self.headers.get('Content-Length', 0)) == 0, 'Delete should have no body')
+            state.last['deleted'] = True
+            self.empty_answer()
 
         def do_POST(self):
             state.check(self.headers.get('Authorization') == 'Bot fixture-only-credential', 'Message authorization missing')
@@ -227,7 +289,7 @@ def handler_for(state):
 
 def main():
     executable = sys.argv[1]
-    for scenario in ('live', 'fragment', 'rest', 'timeout', 'cancel', 'cancel-transfer', 'fatal',
+    for scenario in ('live', 'fragment', 'rest', 'messages', 'timeout', 'cancel', 'cancel-transfer', 'fatal',
                      'missing-ack', 'handshake-timeout', 'close-handshake', 'pause-destroy'):
         state = State(scenario)
         server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler_for(state))
@@ -245,6 +307,11 @@ def main():
                 state.check(state.heartbeats >= 3, 'REST blocked Gateway heartbeats')
             if scenario == 'fatal':
                 state.check(state.connections == 1, 'Fatal close retried')
+            if scenario == 'messages':
+                state.check(state.last.get('deleted'), 'Message delete was not called')
+                state.check(state.last.get('reactions') == [(False, '👍'), (False, '👍'), (True, '👍'),
+                                                           (False, 'party:123'), (True, 'party:123')],
+                            'Reaction lifecycle or 429 retry was incorrect')
             if scenario in ('missing-ack', 'handshake-timeout'):
                 state.check(state.connections == 3, 'Missing ACK did not consume bounded reconnect attempts')
             if scenario in ('cancel', 'cancel-transfer', 'close-handshake'):

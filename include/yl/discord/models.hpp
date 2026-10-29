@@ -78,9 +78,19 @@ struct YL_DISCORD_EXPORT Message {
     std::string content;
 
     [[nodiscard]] task<Message> reply(std::string content) const;
+    [[nodiscard]] task<Message> fetch() const;
+    [[nodiscard]] task<Message> edit(std::string content) const;
+    [[nodiscard]] task<> delete_message() const;
+    [[nodiscard]] task<> add_reaction(std::string emoji) const;
+    [[nodiscard]] task<> remove_reaction(std::string emoji) const;
 
 private:
     static task<Message> send_impl(Message source, std::string content, bool reply);
+    static task<Message> fetch_impl(Message source);
+    static task<Message> edit_impl(Message source, std::string content);
+    static task<> delete_impl(Message source);
+    static task<> reaction_impl(Message source, std::string emoji, bool remove);
+    void require_transport() const;
     std::shared_ptr<MessageTransport> transport_;
     friend class Client;
     friend class Context;

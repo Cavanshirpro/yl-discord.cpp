@@ -60,6 +60,42 @@ task<> timeout_scenario(Client& client) {
 }
 task<> cancel_request(Client& client) { co_await client.rest().request("GET", "/long-limit"); }
 task<> close_soon(Client& client) { co_await sleep_for(80ms); client.close(); }
+
+task<> message_operations_scenario(Client& client) {
+    auto message = co_await client.fetch_message(Snowflake{42}, Snowflake{321});
+    check(message.content == "initial", "Fetch message failed");
+    auto pending = message.edit("edited @everyone <@7> \"quoted\"");
+    message = Message{};
+    auto edited = co_await std::move(pending);
+    check(edited.content == "edited @everyone <@7> \"quoted\"", "Edit result was not parsed");
+    auto refreshed = co_await edited.fetch();
+    check(refreshed.id == Snowflake{321} && refreshed.content == edited.content, "Fetch result lost its binding");
+    co_await refreshed.add_reaction("\xf0\x9f\x91\x8d");
+    co_await refreshed.remove_reaction("\xf0\x9f\x91\x8d");
+    co_await client.add_reaction(Snowflake{42}, Snowflake{321}, "<a:party:123>");
+    co_await client.remove_reaction(Snowflake{42}, Snowflake{321}, "party:123");
+    for (const auto id : {322ULL, 323ULL}) {
+        bool invalid = false;
+        try { co_await client.fetch_message(Snowflake{42}, Snowflake{id}); }
+        catch (const ProtocolError&) { invalid = true; }
+        check(invalid, "Malformed message response was not a ProtocolError");
+    }
+    bool forbidden = false;
+    try { co_await client.edit_message(Snowflake{42}, Snowflake{324}, "denied"); }
+    catch (const HttpError& error) { forbidden = error.status() == 403 && error.discord_code() == 50013; }
+    check(forbidden, "Permission failure was not retained");
+    for (auto emoji : {"", ".", "..", "bad\nemoji"}) {
+        bool invalid = false;
+        try { co_await refreshed.add_reaction(emoji); }
+        catch (const std::invalid_argument&) { invalid = true; }
+        check(invalid, "Invalid reaction was sent");
+    }
+    co_await refreshed.delete_message();
+    bool absent = false;
+    try { co_await client.fetch_message(Snowflake{42}, Snowflake{321}); }
+    catch (const HttpError& error) { absent = error.status() == 404 && error.discord_code() == 10008; }
+    check(absent, "Deleted message was still available");
+}
 }
 
 int main(int argc, char** argv) {
@@ -82,9 +118,10 @@ int main(int argc, char** argv) {
             // A server-requested Resume is exercised before the second command.
             if (replies == 2 || scenario == "fragment") bot.close();
         });
-        if (scenario == "rest" || scenario == "timeout" || scenario == "cancel" || scenario == "cancel-transfer") {
+        if (scenario == "rest" || scenario == "timeout" || scenario == "cancel" || scenario == "cancel-transfer" || scenario == "messages") {
             bot.rest().authenticate("fixture-only-credential");
             if (scenario == "rest") bot.spawn(rest_scenario(bot));
+            if (scenario == "messages") bot.spawn(message_operations_scenario(bot));
             if (scenario == "timeout") bot.spawn(timeout_scenario(bot));
             if (scenario == "cancel") { bot.spawn(cancel_request(bot)); bot.spawn(close_soon(bot)); }
             if (scenario == "cancel-transfer") { bot.spawn(bot.rest().request("GET", "/slow")); bot.spawn(close_soon(bot)); }

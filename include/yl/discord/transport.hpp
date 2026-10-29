@@ -17,11 +17,17 @@ struct MessageRequest {
 };
 
 // Implementations must suspend for I/O rather than blocking the event-loop thread.
-// This narrow port covers message sending, not the future complete REST API.
+// Optional operations default to lazy unsupported-operation errors for older transports.
 class YL_DISCORD_EXPORT MessageTransport {
 public:
     virtual ~MessageTransport() = default;
     [[nodiscard]] virtual task<Message> send_message(MessageRequest request) = 0;
+    [[nodiscard]] virtual task<Message> fetch_message(Snowflake channel, Snowflake message);
+    [[nodiscard]] virtual task<Message> edit_message(Snowflake channel, Snowflake message, std::string content);
+    [[nodiscard]] virtual task<> delete_message(Snowflake channel, Snowflake message);
+    [[nodiscard]] virtual task<> add_reaction(Snowflake channel, Snowflake message, std::string emoji);
+    /// @brief Remove only the current bot's reaction.
+    [[nodiscard]] virtual task<> remove_reaction(Snowflake channel, Snowflake message, std::string emoji);
 };
 
 } // namespace yl::discord

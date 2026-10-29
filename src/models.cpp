@@ -30,9 +30,7 @@ task<Message> Message::reply(std::string reply_content) const {
 }
 
 task<Message> Message::send_impl(Message source, std::string content, bool reply) {
-    if (!source.transport_) {
-        throw std::logic_error("Message is not bound to a transport; dispatch it through a Client first");
-    }
+    source.require_transport();
     MessageRequest request{source.channel_id, std::move(content), std::nullopt};
     if (reply) {
         request.reply_to = source.id;
@@ -40,6 +38,37 @@ task<Message> Message::send_impl(Message source, std::string content, bool reply
     auto result = co_await source.transport_->send_message(std::move(request));
     result.transport_ = source.transport_;
     co_return result;
+}
+
+void Message::require_transport() const {
+    if (!transport_) throw std::logic_error("Message is not bound to a transport; dispatch it through a Client first");
+}
+task<Message> Message::fetch() const { return fetch_impl(*this); }
+task<Message> Message::edit(std::string content) const { return edit_impl(*this, std::move(content)); }
+task<> Message::delete_message() const { return delete_impl(*this); }
+task<> Message::add_reaction(std::string emoji) const { return reaction_impl(*this, std::move(emoji), false); }
+task<> Message::remove_reaction(std::string emoji) const { return reaction_impl(*this, std::move(emoji), true); }
+
+task<Message> Message::fetch_impl(Message source) {
+    source.require_transport();
+    auto result = co_await source.transport_->fetch_message(source.channel_id, source.id);
+    result.transport_ = source.transport_;
+    co_return result;
+}
+task<Message> Message::edit_impl(Message source, std::string content) {
+    source.require_transport();
+    auto result = co_await source.transport_->edit_message(source.channel_id, source.id, std::move(content));
+    result.transport_ = source.transport_;
+    co_return result;
+}
+task<> Message::delete_impl(Message source) {
+    source.require_transport();
+    co_await source.transport_->delete_message(source.channel_id, source.id);
+}
+task<> Message::reaction_impl(Message source, std::string emoji, bool remove) {
+    source.require_transport();
+    if (remove) co_await source.transport_->remove_reaction(source.channel_id, source.id, std::move(emoji));
+    else co_await source.transport_->add_reaction(source.channel_id, source.id, std::move(emoji));
 }
 
 } // namespace yl::discord

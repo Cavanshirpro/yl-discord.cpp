@@ -30,7 +30,7 @@ if(NOT TARGET asio::asio)
 endif()
 
 configure_file(include/yl/discord/version.hpp.in generated/yl/discord/version.hpp @ONLY)
-add_library(yl_discord src/client.cpp src/commands.cpp src/models.cpp src/memory_transport.cpp
+add_library(yl_discord src/client.cpp src/commands.cpp src/models.cpp src/transport.cpp src/memory_transport.cpp
     src/curl_engine.cpp src/rest.cpp src/gateway.cpp src/protocol.cpp)
 add_library(yl::discord ALIAS yl_discord)
 set_target_properties(yl_discord PROPERTIES EXPORT_NAME discord

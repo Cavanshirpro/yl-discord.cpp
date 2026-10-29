@@ -64,6 +64,11 @@ public:
         spawn(detail::discard_result(std::move(work)), std::move(source));
     }
     [[nodiscard]] task<Message> send_message(Snowflake channel, std::string content);
+    [[nodiscard]] task<Message> fetch_message(Snowflake channel, Snowflake message);
+    [[nodiscard]] task<Message> edit_message(Snowflake channel, Snowflake message, std::string content);
+    [[nodiscard]] task<> delete_message(Snowflake channel, Snowflake message);
+    [[nodiscard]] task<> add_reaction(Snowflake channel, Snowflake message, std::string emoji);
+    [[nodiscard]] task<> remove_reaction(Snowflake channel, Snowflake message, std::string emoji);
     [[nodiscard]] asio::any_io_executor executor() noexcept { return io_.get_executor(); }
     [[nodiscard]] const ClientOptions& options() const noexcept { return options_; }
     [[nodiscard]] std::vector<TaskError> take_errors();
@@ -78,6 +83,7 @@ protected:
 
 private:
     void report_error(TaskError error);
+    Message message_reference(Snowflake channel, Snowflake message) const;
     asio::io_context io_;
     std::shared_ptr<MessageTransport> transport_;
     std::shared_ptr<detail::Connection> connection_;

@@ -310,6 +310,75 @@ void stop_pauses_and_run_resumes() {
     CHECK(state == 2);
 }
 
+task<> message_operations(Client& client, std::shared_ptr<testing::MemoryTransport> transport) {
+    auto sent = co_await client.send_message(Snowflake{42}, "original");
+    const auto id = sent.id;
+    transport->store(sent); // Must not retain a bound transport inside the fixture store.
+    { auto unstarted = sent.edit("never executed"); }
+    auto original = co_await client.fetch_message(Snowflake{42}, id);
+    CHECK(original.content == "original");
+    auto pending = original.edit("edited");
+    original = Message{};
+    auto edited = co_await std::move(pending);
+    CHECK(edited.content == "edited" && edited.id == id);
+    CHECK(sent.content == "original"); // Models are snapshots, not a hidden shared cache.
+    auto refreshed = co_await sent.fetch();
+    CHECK(refreshed.content == "edited");
+    co_await refreshed.add_reaction("emoji");
+    co_await refreshed.remove_reaction("emoji");
+    auto edited_again = co_await client.edit_message(Snowflake{42}, id, "again");
+    CHECK(edited_again.content == "again");
+    co_await client.add_reaction(Snowflake{42}, id, "other");
+    co_await client.remove_reaction(Snowflake{42}, id, "other");
+    co_await edited_again.delete_message();
+    bool missing = false;
+    try { co_await refreshed.fetch(); }
+    catch (const std::out_of_range&) { missing = true; }
+    CHECK(missing);
+    CHECK(transport->actions().size() == 9);
+    CHECK(transport->actions()[0].kind == testing::MessageActionKind::fetch);
+    CHECK(transport->actions()[1].kind == testing::MessageActionKind::edit);
+    CHECK(transport->actions().back().kind == testing::MessageActionKind::erase);
+    auto retained_snapshot = co_await client.send_message(Snowflake{42}, "stored without transport cycle");
+    transport->store(retained_snapshot);
+}
+
+void messages_are_owned_lazy_bound_snapshots() {
+    std::weak_ptr<testing::MemoryTransport> weak;
+    {
+        auto transport = std::make_shared<testing::MemoryTransport>();
+        weak = transport;
+        Client client{transport};
+        client.spawn(message_operations(client, transport)); client.run();
+        client.spawn(Message{}.edit("unbound"));
+        throws<std::logic_error>([&] { client.run(); });
+    }
+    CHECK(weak.expired());
+}
+
+class SendOnlyTransport : public MessageTransport {
+public:
+    task<Message> send_message(MessageRequest request) override {
+        Message result; result.id = Snowflake{1}; result.channel_id = request.channel_id;
+        result.content = std::move(request.content); co_return result;
+    }
+};
+
+task<> legacy_transport_operations(Client& client) {
+    auto message = co_await client.send_message(Snowflake{42}, "sent");
+    CHECK(message.content == "sent");
+    bool unsupported = false;
+    try { co_await message.edit("unsupported"); }
+    catch (const std::logic_error&) { unsupported = true; }
+    CHECK(unsupported);
+}
+
+void send_only_custom_transports_remain_usable() {
+    auto transport = std::make_shared<SendOnlyTransport>();
+    Client client{transport};
+    client.spawn(legacy_transport_operations(client)); client.run();
+}
+
 } // namespace
 
 int main() {
@@ -324,7 +393,9 @@ int main() {
         {"registration validation and rollback", registrations_are_validated_and_rolled_back},
         {"listener snapshots and raw events", listener_snapshots_and_raw_events},
         {"executor and unbound message", executor_and_unbound_message},
-        {"stop and resume", stop_pauses_and_run_resumes}
+        {"stop and resume", stop_pauses_and_run_resumes},
+        {"owned lazy message operations", messages_are_owned_lazy_bound_snapshots},
+        {"send-only custom transport compatibility", send_only_custom_transports_remain_usable}
     };
     int failures = 0;
     for (const auto& [name, test] : tests) {

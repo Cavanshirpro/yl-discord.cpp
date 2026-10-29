@@ -24,6 +24,10 @@ The command suite covers strict numeric/ID conversion, custom converters, option
 parameters, arity errors, preserved invocation Context, asynchronous check ownership,
 cooldown alias sharing/scopes/reset/expiry/capacity, failed-check admission,
 UTF-8 help pagination and Cog-wide removal during a suspended callback.
+Core tests also verify lazy message operations, snapshot binding and send-only
+custom transport compatibility. The message network scenario checks fetch/edit/
+delete, mention suppression on edits, encoded Unicode/custom reactions, 204 empty
+responses, reaction 429 retries, malformed response diagnostics, 403 and 404.
 
 `tests/consumer` links/runs against the installed CMake package. Conan's
 `test_package` checks an actual command/reply through the installed dependency.
