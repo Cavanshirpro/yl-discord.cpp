@@ -33,6 +33,16 @@ Use one path per release. A manual `release-version` run is available when metad
 was already committed. An existing tag must point to the exact checked-out commit.
 Never move a published tag to a fix; increment the version instead.
 
+To retry publication of an existing tag, run `publish` from the Actions page or
+use GitHub CLI without creating another tag:
+
+```sh
+gh workflow run publish.yml --ref main -f tag=v0.4.0
+```
+
+This selects current workflow logic while building the frozen tagged source.
+It can recover an interrupted draft; a complete published release is preserved.
+
 ## Checks and assets
 
 `publish` validates tag/version/source identity, calls reusable build/package
