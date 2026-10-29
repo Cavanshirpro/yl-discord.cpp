@@ -37,7 +37,8 @@ Portal. Compression and generic task-group cancellation remain future work.
 - [ ] Buttons, selects, modals and Views.
 - [ ] Guild, channel, member, role and permission APIs.
 - [x] Message fetch/edit/delete and own-reaction helpers.
-- [ ] Embeds and attachments.
+- [x] Typed rich embeds, structured edits and explicit allowed-mention policies.
+- [ ] Attachment uploads.
 - [x] Typed parameters, converters, checks, cooldowns and generated help.
 - [x] Cog-wide command removal with in-flight ownership.
 - [ ] Cog lifecycle hooks and managed background tasks.

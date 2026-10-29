@@ -11,6 +11,7 @@ events/Context by value in coroutine callbacks. `sleep_for(duration)` awaits an
 Asio steady timer. Tasks are lazy; dropping an unstarted task does not perform
 the operation. `Client::spawn(task, source)` runs it and discards any return value.
 Blocking functions remain blocking; see [ownership rules](ARCHITECTURE.md).
+`is_cancelled(asio::error_code)` recognizes operation_aborted across DLL category instances.
 
 ## Client
 
@@ -124,10 +125,13 @@ See the complete [class example](../examples/class_bot.cpp).
   malformed, negative or overflowing decimal strings throw `std::invalid_argument`.
   The default numeric value is zero; it is not proof of a real Discord object.
 - **User:** `id`, `name`, `bot`.
-- **Message:** `id`, `channel_id`, optional `guild_id`, `author`, `content` and
+- **Message:** `id`, `channel_id`, optional `guild_id`, `author`, `content`, `embeds` and
   `reply(content)`, `fetch()`, `edit(content)`, `delete_message()`, `add_reaction(emoji)`
   and `remove_reaction(emoji)`. Operations need a transport bound through Client.
   Edits return new snapshots; they do not mutate older values. See [message operations](MESSAGES.md).
+- **Embed / MessageOptions / MessageEditOptions / AllowedMentions:** owned rich
+  fields, typed outgoing validation and explicit mention control. All send/reply
+  methods accept MessageOptions; edit methods accept MessageEditOptions. See [embeds](EMBEDS.md).
 - **Ready:** `user`. Dispatching Ready does not authenticate a session.
 - **RawEvent:** `name`, opaque `json`, optional `sequence`. No JSON parsing or
   automatic raw/high-level event pairing is performed yet.
@@ -142,7 +146,7 @@ See the complete [class example](../examples/class_bot.cpp).
 
 Implement `MessageTransport::send_message(MessageRequest) -> task<Message>` for an
 alternative transport. MessageRequest owns `channel_id`, `content` and optional
-`reply_to`. An implementation must suspend for I/O instead of blocking the loop.
+`reply_to`, `embeds` and `allowed_mentions`. An implementation must suspend for I/O instead of blocking the loop.
 Error reporting uses normal exceptions, propagated through the caller's task.
 Optional virtual fetch/edit/delete/reaction methods default to lazy unsupported
 operation errors, so send-only custom transports remain source-compatible.

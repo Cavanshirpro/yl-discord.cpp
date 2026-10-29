@@ -15,6 +15,7 @@ struct MessageAction {
     Snowflake channel_id;
     Snowflake message_id;
     std::string value;
+    std::optional<MessageEditOptions> edit_options;
 };
 
 // Test double. Access its records only on the event loop or after run() returns.
@@ -24,6 +25,7 @@ public:
     task<Message> send_message(MessageRequest request) override;
     task<Message> fetch_message(Snowflake channel, Snowflake message) override;
     task<Message> edit_message(Snowflake channel, Snowflake message, std::string content) override;
+    task<Message> edit_message(Snowflake channel, Snowflake message, MessageEditOptions options) override;
     task<> delete_message(Snowflake channel, Snowflake message) override;
     task<> add_reaction(Snowflake channel, Snowflake message, std::string emoji) override;
     task<> remove_reaction(Snowflake channel, Snowflake message, std::string emoji) override;

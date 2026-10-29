@@ -183,11 +183,17 @@ Message Client::message_reference(Snowflake channel, Snowflake message) const {
     result.transport_ = transport_;
     return result;
 }
+task<Message> Client::send_message(Snowflake channel, MessageOptions options) {
+    return Message::send_impl(message_reference(channel, Snowflake{}), std::move(options), false);
+}
 task<Message> Client::fetch_message(Snowflake channel, Snowflake message) {
     return message_reference(channel, message).fetch();
 }
 task<Message> Client::edit_message(Snowflake channel, Snowflake message, std::string content) {
     return message_reference(channel, message).edit(std::move(content));
+}
+task<Message> Client::edit_message(Snowflake channel, Snowflake message, MessageEditOptions options) {
+    return message_reference(channel, message).edit(std::move(options));
 }
 task<> Client::delete_message(Snowflake channel, Snowflake message) {
     return message_reference(channel, message).delete_message();

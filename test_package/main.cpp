@@ -38,7 +38,12 @@ int main() {
     // Exercise the public payload across the ABI with Win32 Unicode macros active.
     bot.spawn(transport->send_message(MessageRequest{Snowflake{42}, "transport probe", std::nullopt}));
     bot.command<int>("ping", [](Context ctx, int value) -> task<> {
-        auto sent = co_await ctx.reply("Pong " + std::to_string(value) + "!");
+        MessageOptions options;
+        options.content = "Pong " + std::to_string(value) + "!";
+        options.embeds.push_back(Embed{.title = "Package probe"});
+        options.allowed_mentions.users = {Snowflake{7}};
+        auto sent = co_await ctx.reply(std::move(options));
+        if (sent.embeds.size() != 1) throw std::runtime_error("Installed embed result failed");
         auto edited = co_await sent.edit("updated");
         if ((co_await edited.fetch()).content != "updated") throw std::runtime_error("Installed edit/fetch failed");
         co_await edited.add_reaction("fixture");
@@ -57,9 +62,14 @@ int main() {
     listener.disconnect();
     bool replied = false;
     bool probed = false;
+    bool rich = false;
     for (const auto& request : transport->sent()) {
         replied = replied || (request.content == "Pong 42!" && request.reply_to == Snowflake{100});
         probed = probed || (request.content == "transport probe" && !request.reply_to);
+        rich = rich || (request.content == "Pong 42!" && request.embeds.size() == 1 && request.allowed_mentions.users.size() == 1);
+    }
+    if (!rich) {
+        std::cerr << "Installed rich payload ABI failed\n"; return 1;
     }
     if (transport->sent().size() != 2 || transport->actions().size() != 5 || !replied || !probed || !observed || listeners != 1 || listener.connected()) {
         std::cerr << "Installed consumer mismatch: sends=" << transport->sent().size() << " actions=" << transport->actions().size()

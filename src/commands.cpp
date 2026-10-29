@@ -113,6 +113,8 @@ task<Message> Context::send(std::string content) const {
 }
 
 task<Message> Context::reply(std::string content) const { return message.reply(std::move(content)); }
+task<Message> Context::send(MessageOptions options) const { return Message::send_impl(message, std::move(options), false); }
+task<Message> Context::reply(MessageOptions options) const { return message.reply(std::move(options)); }
 
 Bot::Bot(BotOptions options)
     : Client(ClientOptions{options.intents, options.connection}), prefix_(std::move(options.command_prefix)) {

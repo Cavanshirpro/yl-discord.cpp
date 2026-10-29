@@ -160,6 +160,21 @@ def handler_for(state):
         def do_PATCH(self):
             state.check(self.headers.get('Authorization') == 'Bot fixture-only-credential', 'Edit authorization missing')
             data = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))))
+            if state.scenario == 'embeds':
+                state.check(self.path == '/api/v10/channels/42/messages/401', 'Wrong rich edit path')
+                state.check(data.get('allowed_mentions') == {'parse': [], 'replied_user': False}, 'Rich edit mention defaults changed')
+                count = state.last.get('patches', 0)
+                if count == 0:
+                    state.check(set(data) == {'embeds', 'allowed_mentions'} and data['embeds'] == [], 'Embed removal must omit content')
+                else:
+                    state.check(set(data) == {'content', 'embeds', 'allowed_mentions'} and data['content'] == '' and len(data['embeds']) == 1,
+                                'Embed replacement must preserve explicit empty content')
+                state.last['patches'] = count + 1
+                if 'content' in data:
+                    state.last['content'] = data['content']
+                state.last['embeds'] = data['embeds']
+                self.embed_answer(401)
+                return
             if self.path.endswith('/324'):
                 self.answer(403, {'code': 50013})
                 return
@@ -205,6 +220,26 @@ def handler_for(state):
         def do_POST(self):
             state.check(self.headers.get('Authorization') == 'Bot fixture-only-credential', 'Message authorization missing')
             data = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))))
+            if state.scenario == 'embeds':
+                state.check(self.path == '/api/v10/channels/42/messages', 'Wrong rich send path')
+                if state.posts == 0:
+                    state.check(data['content'] == 'hello <@7>' and data['allowed_mentions'] ==
+                                {'parse': [], 'replied_user': False, 'users': ['7'], 'roles': ['8']}, 'Mention whitelists changed')
+                    embed = data['embeds'][0]
+                    state.check(embed == {'title': 'Status', 'description': 'UTF-8 😀', 'url': 'https://example.invalid/',
+                        'timestamp': '2026-10-29T00:00:00Z', 'color': 0x123456, 'fields': [{'name': 'name', 'value': 'value', 'inline': True}],
+                        'footer': {'text': 'footer', 'icon_url': 'https://example.invalid/footer.png'},
+                        'author': {'name': 'author', 'url': 'https://example.invalid/author', 'icon_url': 'https://example.invalid/icon.png'},
+                        'image': {'url': 'https://example.invalid/image.png'}, 'thumbnail': {'url': 'https://example.invalid/thumb.png'}},
+                        'Embed serialization differs from the public fields')
+                else:
+                    state.check(data['content'] == '' and data['message_reference']['message_id'] == '401' and
+                                data['allowed_mentions'] == {'parse': ['everyone', 'users', 'roles'], 'replied_user': True},
+                                'Embed reply or explicit all-mentions policy changed')
+                state.posts += 1
+                state.last['content'] = data['content']; state.last['embeds'] = data['embeds']
+                self.embed_answer(400 + state.posts)
+                return
             state.check(data.get('content') == 'Pong! "quoted" \n UTF-8: ü', 'JSON/UTF-8 content changed')
             state.check(data.get('message_reference', {}).get('message_id') in ('100', '101'), 'Reply reference missing')
             state.check(data.get('allowed_mentions') == {'parse': [], 'replied_user': False}, 'Implicit mentions enabled')
@@ -213,6 +248,11 @@ def handler_for(state):
                 time.sleep(.18)
             state.posts += 1
             self.answer(200, {'id': str(200 + state.posts), 'channel_id': '42', 'content': 'reply accepted',
+                              'author': {'id': '1', 'username': 'fixture-bot', 'bot': True}})
+
+        def embed_answer(self, message_id):
+            self.answer(200, {'id': str(message_id), 'channel_id': '42', 'content': state.last['content'],
+                              'embeds': [{**embed, 'type': 'rich'} for embed in state.last['embeds']],
                               'author': {'id': '1', 'username': 'fixture-bot', 'bot': True}})
 
         def websocket(self):
@@ -289,7 +329,7 @@ def handler_for(state):
 
 def main():
     executable = sys.argv[1]
-    for scenario in ('live', 'fragment', 'rest', 'messages', 'timeout', 'cancel', 'cancel-transfer', 'fatal',
+    for scenario in ('live', 'fragment', 'rest', 'messages', 'embeds', 'timeout', 'cancel', 'cancel-transfer', 'fatal',
                      'missing-ack', 'handshake-timeout', 'close-handshake', 'pause-destroy'):
         state = State(scenario)
         server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler_for(state))
@@ -312,6 +352,8 @@ def main():
                 state.check(state.last.get('reactions') == [(False, '👍'), (False, '👍'), (True, '👍'),
                                                            (False, 'party:123'), (True, 'party:123')],
                             'Reaction lifecycle or 429 retry was incorrect')
+            if scenario == 'embeds':
+                state.check(state.posts == 2 and state.last.get('patches') == 2, 'Rich message operation counts incorrect')
             if scenario in ('missing-ack', 'handshake-timeout'):
                 state.check(state.connections == 3, 'Missing ACK did not consume bounded reconnect attempts')
             if scenario in ('cancel', 'cancel-transfer', 'close-handshake'):

@@ -32,7 +32,9 @@ public:
     }
 
     [[nodiscard]] task<Message> send(std::string content) const;
+    [[nodiscard]] task<Message> send(MessageOptions options) const;
     [[nodiscard]] task<Message> reply(std::string content) const;
+    [[nodiscard]] task<Message> reply(MessageOptions options) const;
 };
 
 using CommandCheck = std::function<task<bool>(Context)>;

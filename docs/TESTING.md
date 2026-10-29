@@ -36,6 +36,11 @@ close cancellation, predicate errors, completion races, paused destruction and
 expiry, registry mutation during predicates, foreign-executor rejection and
 unstarted-task cleanup.
 
+The embed suite covers UTF-8/UTF-16 boundaries, per-field and combined limits,
+URL policy, mention flag/whitelist conflicts, owned rich snapshots, preserve/clear
+edit semantics and older custom edit implementations. The thirteenth network
+scenario verifies full rich JSON, mention policies and embed-only create/reply/edit.
+
 `tests/consumer` links/runs against the installed CMake package. Conan's
 `test_package` checks an actual command/reply through the installed dependency.
 CI also relocates CMake installation prefixes and tests shared/static builds.

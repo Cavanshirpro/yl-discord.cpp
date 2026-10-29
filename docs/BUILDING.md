@@ -78,8 +78,8 @@ before the library, define `WIN32_LEAN_AND_MEAN` and `NOMINMAX` before
 | Option | Default | Effect |
 | --- | --- | --- |
 | `BUILD_SHARED_LIBS` | OFF | Build a shared library instead of static |
-| `YL_DISCORD_BUILD_EXAMPLES` | ON at top level | Build four offline examples and the live ping bot |
-| `YL_DISCORD_BUILD_TESTS` | ON at top level | Build core, command, event and local network suites |
+| `YL_DISCORD_BUILD_EXAMPLES` | ON at top level | Build five offline examples and the live ping bot |
+| `YL_DISCORD_BUILD_TESTS` | ON at top level | Build core, command, event, embed and local network suites |
 | `YL_DISCORD_FETCH_ASIO` | ON | Allow source-build dependency download |
 | `YL_DISCORD_ASIO_INCLUDE_DIR` | Discovered | Explicit standalone Asio header directory |
 
@@ -103,5 +103,8 @@ For multi-config generators pass `--config Release` to build/install and `-C
 Release` to CTest. Installation includes headers, library, `ylDiscord` CMake
 config, `yl::discord` target, `yl-discord.pc` and license notices. Asio is separate.
 Consumers inherit C++20, Asio and platform dependencies through `yl::discord`.
+When curl is dynamically installed in a custom prefix, make the matching runtime
+discoverable too: its bin directory on Windows PATH or its lib directory on Linux
+LD_LIBRARY_PATH. CMake dependency discovery alone does not select the OS runtime loader's search path.
 For pkg-config, use `pkg-config --cflags --libs yl-discord`; add `--static` when
 linking statically and enable C++20 in your compiler flags.

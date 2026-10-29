@@ -96,6 +96,35 @@ task<> message_operations_scenario(Client& client) {
     catch (const HttpError& error) { absent = error.status() == 404 && error.discord_code() == 10008; }
     check(absent, "Deleted message was still available");
 }
+
+task<> embeds_scenario(Client& client) {
+    Embed embed;
+    embed.title = "Status"; embed.description = "UTF-8 \xf0\x9f\x98\x80"; embed.color = 0x123456;
+    embed.url = "https://example.invalid/"; embed.timestamp = "2026-10-29T00:00:00Z";
+    embed.fields = {{"name", "value", true}};
+    embed.footer = EmbedFooter{"footer", "https://example.invalid/footer.png"};
+    embed.author = EmbedAuthor{"author", "https://example.invalid/author", "https://example.invalid/icon.png"};
+    embed.image_url = "https://example.invalid/image.png"; embed.thumbnail_url = "https://example.invalid/thumb.png";
+    MessageOptions options; options.content = "hello <@7>"; options.embeds.push_back(embed);
+    options.allowed_mentions.users = {Snowflake{7}}; options.allowed_mentions.roles = {Snowflake{8}};
+    auto message = co_await client.send_message(Snowflake{42}, options);
+    check(message.embeds.size() == 1 && message.embeds[0].fields[0].inline_field &&
+        message.embeds[0].author->name == "author" && message.embeds[0].color == 0x123456, "Rich response parsing failed");
+    MessageEditOptions clear; clear.embeds = std::vector<Embed>{};
+    auto cleared = co_await message.edit(clear);
+    check(cleared.content == "hello <@7>" && cleared.embeds.empty(), "Embed clearing changed content");
+    MessageEditOptions replace; replace.content = ""; replace.embeds = std::vector<Embed>{embed};
+    auto replaced = co_await cleared.edit(replace);
+    check(replaced.content.empty() && replaced.embeds.size() == 1, "Embed-only edit failed");
+    MessageOptions reply; reply.embeds = {embed}; reply.allowed_mentions = AllowedMentions::all();
+    auto response = co_await replaced.reply(reply);
+    check(response.content.empty() && response.embeds[0].type == "rich", "Embed-only reply failed");
+    bool invalid = false;
+    MessageOptions invalid_options; invalid_options.content = std::string(2001, 'a');
+    try { (void)co_await client.send_message(Snowflake{42}, invalid_options); }
+    catch (const std::invalid_argument&) { invalid = true; }
+    check(invalid, "Invalid payload was not rejected before HTTP");
+}
 }
 
 int main(int argc, char** argv) {
@@ -118,10 +147,11 @@ int main(int argc, char** argv) {
             // A server-requested Resume is exercised before the second command.
             if (replies == 2 || scenario == "fragment") bot.close();
         });
-        if (scenario == "rest" || scenario == "timeout" || scenario == "cancel" || scenario == "cancel-transfer" || scenario == "messages") {
+        if (scenario == "rest" || scenario == "timeout" || scenario == "cancel" || scenario == "cancel-transfer" || scenario == "messages" || scenario == "embeds") {
             bot.rest().authenticate("fixture-only-credential");
             if (scenario == "rest") bot.spawn(rest_scenario(bot));
             if (scenario == "messages") bot.spawn(message_operations_scenario(bot));
+            if (scenario == "embeds") bot.spawn(embeds_scenario(bot));
             if (scenario == "timeout") bot.spawn(timeout_scenario(bot));
             if (scenario == "cancel") { bot.spawn(cancel_request(bot)); bot.spawn(close_soon(bot)); }
             if (scenario == "cancel-transfer") { bot.spawn(bot.rest().request("GET", "/slow")); bot.spawn(close_soon(bot)); }

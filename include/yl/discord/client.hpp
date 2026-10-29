@@ -79,8 +79,10 @@ public:
         spawn(detail::discard_result(std::move(work)), std::move(source));
     }
     [[nodiscard]] task<Message> send_message(Snowflake channel, std::string content);
+    [[nodiscard]] task<Message> send_message(Snowflake channel, MessageOptions options);
     [[nodiscard]] task<Message> fetch_message(Snowflake channel, Snowflake message);
     [[nodiscard]] task<Message> edit_message(Snowflake channel, Snowflake message, std::string content);
+    [[nodiscard]] task<Message> edit_message(Snowflake channel, Snowflake message, MessageEditOptions options);
     [[nodiscard]] task<> delete_message(Snowflake channel, Snowflake message);
     [[nodiscard]] task<> add_reaction(Snowflake channel, Snowflake message, std::string emoji);
     [[nodiscard]] task<> remove_reaction(Snowflake channel, Snowflake message, std::string emoji);

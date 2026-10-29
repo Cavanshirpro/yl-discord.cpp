@@ -11,6 +11,12 @@ task<Message> MessageTransport::fetch_message(Snowflake, Snowflake) {
 task<Message> MessageTransport::edit_message(Snowflake, Snowflake, std::string) {
     throw std::logic_error("This transport does not support editing messages"); co_return Message{};
 }
+task<Message> MessageTransport::edit_message(Snowflake channel, Snowflake message, MessageEditOptions options) {
+    validate_message_edit(options);
+    if (options.embeds || options.allowed_mentions != AllowedMentions{})
+        throw std::logic_error("This transport does not support structured message edits");
+    co_return co_await edit_message(channel, message, std::move(*options.content));
+}
 task<> MessageTransport::delete_message(Snowflake, Snowflake) {
     throw std::logic_error("This transport does not support deleting messages"); co_return;
 }

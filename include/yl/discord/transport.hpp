@@ -14,6 +14,8 @@ struct MessageRequest {
     Snowflake channel_id;
     std::string content;
     std::optional<Snowflake> reply_to;
+    std::vector<Embed> embeds;
+    AllowedMentions allowed_mentions;
 };
 
 // Implementations must suspend for I/O rather than blocking the event-loop thread.
@@ -24,6 +26,7 @@ public:
     [[nodiscard]] virtual task<Message> send_message(MessageRequest request) = 0;
     [[nodiscard]] virtual task<Message> fetch_message(Snowflake channel, Snowflake message);
     [[nodiscard]] virtual task<Message> edit_message(Snowflake channel, Snowflake message, std::string content);
+    [[nodiscard]] virtual task<Message> edit_message(Snowflake channel, Snowflake message, MessageEditOptions options);
     [[nodiscard]] virtual task<> delete_message(Snowflake channel, Snowflake message);
     [[nodiscard]] virtual task<> add_reaction(Snowflake channel, Snowflake message, std::string emoji);
     /// @brief Remove only the current bot's reaction.

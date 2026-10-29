@@ -50,6 +50,10 @@ request's mention policy during editing. Content-only edits omit attachments,
 embeds, components and flags so they remain unchanged. Empty content is sent to
 Discord, which decides whether other message content makes that edit valid.
 
+MessageOptions and MessageEditOptions add rich embeds and deliberate mention
+policies; string overloads retain the defaults above. See the [embed guide](EMBEDS.md)
+for preserving versus clearing optional fields and preflight validation.
+
 Emoji input is raw UTF-8, `name:id`, `<:name:id>` or `<a:name:id>`. The helper
 URL-encodes it as a single path component; do not pre-encode it. Empty values,
 ASCII controls/whitespace, path-marker values and inputs over 256 bytes are
@@ -84,6 +88,7 @@ MessageActionKind, channel ID, message ID and optional content/emoji value.
 on an unknown channel/message pair throws `std::out_of_range`.
 
 The test double records reaction requests without simulating reaction counts,
-permissions, Discord validation or rate limits. Stored snapshots and action logs
+permissions, rendering, notifications or rate limits. It validates the typed outgoing
+message schema, including Unicode/field limits. Stored snapshots and action logs
 are intentionally retained for the test's lifetime; this is not a production cache.
 Access them on the event-loop thread or after `run()` returns.

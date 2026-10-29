@@ -26,7 +26,8 @@ std::string heartbeat_payload(std::optional<std::uint64_t> sequence);
 std::string identify_payload(const std::string& token, Intents intents);
 std::string resume_payload(const std::string& token, const std::string& session, std::uint64_t sequence);
 std::string message_payload(const MessageRequest& request);
-std::string edit_message_payload(const std::string& content);
+std::string edit_message_payload(const MessageEditOptions& options);
+std::vector<Embed> parse_embeds(const Json& data);
 Message parse_message_response(const std::string& body);
 std::string reaction_path(const std::string& emoji);
 

@@ -39,6 +39,7 @@ Message parse_message(const Json& data) {
     if (data.contains("guild_id") && !data["guild_id"].is_null()) message.guild_id = id(data["guild_id"]);
     message.author = parse_user(data.at("author"));
     message.content = data.value("content", std::string{});
+    if (data.contains("embeds")) message.embeds = parse_embeds(data.at("embeds"));
     return message;
 }
 Connection::Connection(asio::any_io_executor executor, ConnectionOptions options, Intents intents)

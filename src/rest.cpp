@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Cavanshirpro
 // Licensed under LGPL-3.0-or-later; see NOTICE, LICENSE and COPYING.
 #include "network_internal.hpp"
+#include "message_validation.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -177,7 +178,7 @@ task<HttpResponse> RestClient::request_impl(std::shared_ptr<State> state, std::s
 
 task<Message> RestClient::send_message(MessageRequest request) { return send_impl(state_, std::move(request)); }
 task<Message> RestClient::send_impl(std::shared_ptr<State> state, MessageRequest request) {
-    if (request.content.empty()) throw std::invalid_argument("Message content cannot be empty");
+    detail::validate_message_parts(request.content, request.embeds, request.allowed_mentions);
     auto response = co_await request_impl(state, "POST", "/channels/" + request.channel_id.str() + "/messages", detail::message_payload(request));
     co_return detail::parse_message_response(response.body);
 }
@@ -186,10 +187,16 @@ task<Message> RestClient::fetch_message(Snowflake channel, Snowflake message) {
     return message_impl(state_, "GET", channel, message, {});
 }
 task<Message> RestClient::edit_message(Snowflake channel, Snowflake message, std::string content) {
-    return message_impl(state_, "PATCH", channel, message, std::move(content));
+    MessageEditOptions options;
+    options.content = std::move(content);
+    return edit_message(channel, message, std::move(options));
 }
-task<Message> RestClient::message_impl(std::shared_ptr<State> state, std::string method, Snowflake channel, Snowflake message, std::string content) {
-    const auto body = method == "PATCH" ? detail::edit_message_payload(content) : std::string{};
+task<Message> RestClient::edit_message(Snowflake channel, Snowflake message, MessageEditOptions options) {
+    return message_impl(state_, "PATCH", channel, message, std::move(options));
+}
+task<Message> RestClient::message_impl(std::shared_ptr<State> state, std::string method, Snowflake channel, Snowflake message, MessageEditOptions options) {
+    if (method == "PATCH") validate_message_edit(options);
+    const auto body = method == "PATCH" ? detail::edit_message_payload(options) : std::string{};
     auto response = co_await request_impl(state, std::move(method), "/channels/" + channel.str() + "/messages/" + message.str(), body);
     co_return detail::parse_message_response(response.body);
 }
