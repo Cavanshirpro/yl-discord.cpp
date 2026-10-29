@@ -20,7 +20,11 @@ yl::discord::task<> wait_for_probe(yl::discord::Client& client, bool& observed) 
 
 yl::discord::task<> cancelled_request_probe(yl::discord::Client& client, bool& observed) {
     try { (void)co_await client.rest().request("GET", "/never-sent"); }
-    catch (const asio::system_error& error) { observed = yl::discord::is_cancelled(error.code()); }
+    catch (const asio::system_error& error) {
+        observed = yl::discord::is_cancelled(error.code());
+        if (!observed) std::cerr << "Cancellation code " << error.code().value() << " category " << error.code().category().name()
+            << "; expected " << static_cast<int>(asio::error::operation_aborted) << " category " << asio::error::get_system_category().name() << '\n';
+    }
 }
 
 int main() {
@@ -41,7 +45,9 @@ int main() {
         co_await edited.remove_reaction("fixture");
         co_await edited.delete_message();
     }, {.aliases = {"p"}, .checks = {checks::dm_only()}, .cooldown = Cooldown{}});
-    if (!bot.get_command("p") || bot.help_text("p").find("<integer>") == std::string::npos) return 1;
+    if (!bot.get_command("p") || bot.help_text("p").find("<integer>") == std::string::npos) {
+        std::cerr << "Installed command metadata failed\n"; return 1;
+    }
     Message message;
     message.id = Snowflake{100};
     message.channel_id = Snowflake{42};
@@ -56,6 +62,9 @@ int main() {
         probed = probed || (request.content == "transport probe" && !request.reply_to);
     }
     if (transport->sent().size() != 2 || transport->actions().size() != 5 || !replied || !probed || !observed || listeners != 1 || listener.connected()) {
+        std::cerr << "Installed consumer mismatch: sends=" << transport->sent().size() << " actions=" << transport->actions().size()
+            << " replied=" << replied << " probed=" << probed << " waited=" << observed << " listened=" << listeners
+            << " connected=" << listener.connected() << '\n';
         return 1;
     }
     // Cancellation must also be recognized when its Asio category originated in a DLL.
@@ -65,6 +74,6 @@ int main() {
     bool cancellation_seen = false;
     cancelled.spawn(cancelled_request_probe(cancelled, cancellation_seen));
     cancelled.run();
-    if (!cancellation_seen) return 1;
+    if (!cancellation_seen) { std::cerr << "Installed cancellation probe failed\n"; return 1; }
     std::cout << "yl-discord.cpp " << version << ": installed package works\n";
 }

@@ -76,7 +76,7 @@ jobs:
           cmake -S tests/consumer -B build/consumer -G Ninja -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/relocated;$RUNNER_TEMP/curl" \
             -DYL_DISCORD_ASIO_INCLUDE_DIR="$GITHUB_WORKSPACE/build/default/_deps/yl_asio-src/asio/include"
           cmake --build build/consumer
-          build/consumer/consumer
+          LD_LIBRARY_PATH="$RUNNER_TEMP/curl/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" build/consumer/consumer
   windows-msvc:
     runs-on: windows-2022
     timeout-minutes: 20
@@ -104,7 +104,7 @@ jobs:
           Move-Item -LiteralPath "$env:RUNNER_TEMP/install" -Destination "$env:RUNNER_TEMP/relocated"
           cmake -S tests/consumer -B build/consumer -A x64 "-DCMAKE_PREFIX_PATH=$env:RUNNER_TEMP/relocated" "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
           cmake --build build/consumer --config Release --parallel 2
-          $env:PATH = "$env:RUNNER_TEMP/relocated/bin;$env:PATH"
+          $env:PATH = "$env:RUNNER_TEMP/relocated/bin;$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows/bin;$env:PATH"
           & ./build/consumer/Release/consumer.exe
           exit $LASTEXITCODE
   windows-mingw:
