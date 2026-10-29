@@ -68,8 +68,15 @@ jobs:
         run: cmake --preset default -DBUILD_SHARED_LIBS="$SHARED" -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/curl" -DYL_DISCORD_BUILD_BENCHMARKS=ON
       - run: cmake --build --preset default --parallel 2
       - run: ctest --preset default
-      - run: build/default/yl_offline_bot && build/default/yl_class_bot && build/default/yl_command_bot && build/default/yl_wait_for_bot && build/default/yl_embed_bot && build/default/yl_upload_bot
+      - name: Run the offline examples present in this source revision
+        run: |
+          for example in offline_bot class_bot command_bot wait_for_bot embed_bot upload_bot; do
+            if [ -f "examples/$example.cpp" ]; then
+              "build/default/yl_$example"
+            fi
+          done
       - name: Offline benchmark correctness smoke (not a performance result)
+        if: hashFiles('benchmarks/offline.cpp') != ''
         run: build/default/yl_offline_benchmark 256 16
       - name: Relocated installed consumer
         run: |
@@ -101,6 +108,7 @@ jobs:
       - run: cmake --build build/native --config Release --parallel 2
       - run: ctest --test-dir build/native -C Release --output-on-failure
       - name: Offline benchmark correctness smoke (not a performance result)
+        if: hashFiles('benchmarks/offline.cpp') != ''
         run: '& ./build/native/Release/yl_offline_benchmark.exe 256 16'
       - name: Relocated installed consumer
         run: |
@@ -134,6 +142,7 @@ jobs:
       - run: cmake --build --preset default --parallel 2
       - run: ctest --preset default
       - name: Offline benchmark correctness smoke (not a performance result)
+        if: hashFiles('benchmarks/offline.cpp') != ''
         run: ./build/default/yl_offline_benchmark.exe 256 16
       - name: Installed consumer
         run: |

@@ -49,6 +49,9 @@ notes/classification/assets is kept unchanged on retry. An inconsistent publishe
 release fails validation; it is never silently overwritten. Optional Conan upload
 runs after GitHub publication when its remote variable is configured.
 
+Reusable CI selects optional examples and the benchmark smoke from the frozen
+source revision, so retrying an older tag does not require tools added later.
+
 ## Local source archives
 
 After committing:
