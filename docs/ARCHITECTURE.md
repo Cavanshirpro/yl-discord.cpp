@@ -4,12 +4,12 @@ The high-level API uses familiar Client/Bot, Message, Context and Cog concepts.
 Ordinary C++ functions, lambdas and virtual methods replace Python decorators.
 The same command code runs with built-in networking or MemoryTransport.
 
-| Layer | Responsibility | v0.1.1 |
+| Layer | Responsibility | v0.2.0 |
 | --- | --- | --- |
 | User API | Hooks, listeners, prefix commands and Cog | Implemented |
 | Models | Owned User/Message/Ready, Snowflake and intents | Initial scope |
 | Runtime | Coroutine tasks, timers, executor and errors | Standalone Asio |
-| Message transport | Awaitable message/reply port | REST and memory implementations |
+| Message transport | Awaitable sends, fetch, edit, delete and own reactions | REST and memory implementations |
 | REST | Verified TLS, deadlines, buckets/global limits | libcurl multi |
 | Gateway | WebSocket, heartbeat and session resume | JSON API v10 |
 | Broader state | Cache, partial guild models, shard coordination | Planned |
@@ -69,3 +69,8 @@ References: [Asio coroutines](https://think-async.com/Asio/asio-1.30.2/doc/asio/
 [libcurl multi](https://curl.se/libcurl/c/libcurl-multi.html),
 [Discord Gateway](https://discord.com/developers/docs/events/gateway),
 [Discord rate limits](https://discord.com/developers/docs/topics/rate-limits).
+
+Command invocation snapshots global checks and retains its registry entry through
+all awaits. Checks run before monotonic cooldown admission, which runs before the
+callback. Error hooks receive the original invocation Context. Message edits return
+new snapshots, while MemoryTransport stores only unbound snapshots to avoid cycles.

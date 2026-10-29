@@ -1,6 +1,6 @@
 # Security policy
 
-The 0.1.x line is experimental. v0.1.1 includes bot-token REST/Gateway networking with TLS verification, deadlines
+The 0.2.x line is experimental. v0.2.0 includes bot-token REST/Gateway networking with TLS verification, deadlines
 and bounded retries. The broader Discord API remains under development.
 
 Report suspected vulnerabilities through GitHub's private vulnerability report
@@ -17,3 +17,8 @@ credentials and scans source assets, but callers must still manage their secrets
 
 Use the latest patch available for the supported minor line. Report the version,
 compiler/platform, reproducible behavior and impact with a redacted example.
+
+Command checks are application authorization logic; hidden help entries do not
+restrict command access. Cooldown state has bounded keys and never evicts an
+active bucket to admit another caller. Discord permissions still govern all live
+message operations. Keep dependencies patched and rebuild consumers for this minor.

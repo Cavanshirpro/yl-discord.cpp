@@ -1,6 +1,6 @@
 {
   "name": "yl-discord-cpp",
-  "version-semver": "0.1.1",
+  "version-semver": "0.2.0",
   "description": "Coroutine-first C++20 Discord bot library",
   "homepage": "https://github.com/Cavanshirpro/yl-discord.cpp",
   "license": "LGPL-3.0-or-later",

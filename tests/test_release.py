@@ -15,6 +15,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from check_release import ROOT, archive_files, repository_files, validate
 import publish_release
+import create_release_tag
 
 
 class PublicationTests(unittest.TestCase):
@@ -124,6 +125,57 @@ class PublicationTests(unittest.TestCase):
                     patch.object(publish_release.subprocess, "run", return_value=result) as runner:
                 publish_release.main()
                 self.assertEqual(runner.call_count, 1)
+
+    def tag_fixture(self, root, existing_commit=None):
+        head = "a" * 40
+        existing = subprocess.CompletedProcess([], 1 if existing_commit is None else 0, existing_commit or "", "")
+        return head, existing, root / "outputs.txt"
+
+    def test_version_workflow_creates_annotated_tag_and_emits_publication_input(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            head, existing, output = self.tag_fixture(root)
+            with patch.object(create_release_tag, "repository_files", return_value={}), \
+                    patch.object(create_release_tag, "validate", return_value="0.2.0"), \
+                    patch.object(create_release_tag.subprocess, "check_output", return_value=head + "\n"), \
+                    patch.object(create_release_tag.subprocess, "run", return_value=existing), \
+                    patch.object(create_release_tag, "api", return_value={"sha": "b" * 40}) as api, \
+                    patch.dict("os.environ", {"GH_REPO": "fixture/repo", "GITHUB_OUTPUT": str(output)}):
+                create_release_tag.main()
+                self.assertEqual(api.call_count, 2)
+                self.assertEqual(api.call_args_list[0].args[1], {
+                    "tag": "v0.2.0", "message": "yl-discord.cpp v0.2.0", "object": head, "type": "commit"})
+                self.assertEqual(api.call_args_list[1].args[1], {"ref": "refs/tags/v0.2.0", "sha": "b" * 40})
+                self.assertEqual(output.read_text(), "tag=v0.2.0\n")
+
+    def test_matching_existing_tag_is_reused_without_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            head, existing, output = self.tag_fixture(root, "a" * 40)
+            with patch.object(create_release_tag, "repository_files", return_value={}), \
+                    patch.object(create_release_tag, "validate", return_value="0.2.0"), \
+                    patch.object(create_release_tag.subprocess, "check_output", return_value=head), \
+                    patch.object(create_release_tag.subprocess, "run", return_value=existing), \
+                    patch.object(create_release_tag, "api") as api, \
+                    patch.dict("os.environ", {"GH_REPO": "fixture/repo", "GITHUB_OUTPUT": str(output)}):
+                create_release_tag.main()
+                api.assert_not_called()
+                self.assertEqual(output.read_text(), "tag=v0.2.0\n")
+
+    def test_existing_tag_on_another_commit_is_never_moved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            head, existing, output = self.tag_fixture(root, "c" * 40)
+            with patch.object(create_release_tag, "repository_files", return_value={}), \
+                    patch.object(create_release_tag, "validate", return_value="0.2.0"), \
+                    patch.object(create_release_tag.subprocess, "check_output", return_value=head), \
+                    patch.object(create_release_tag.subprocess, "run", return_value=existing), \
+                    patch.object(create_release_tag, "api") as api, \
+                    patch.dict("os.environ", {"GH_REPO": "fixture/repo", "GITHUB_OUTPUT": str(output)}):
+                with self.assertRaisesRegex(ValueError, "another commit"):
+                    create_release_tag.main()
+                api.assert_not_called()
+                self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

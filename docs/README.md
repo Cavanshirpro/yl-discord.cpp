@@ -1,7 +1,8 @@
 # Documentation
 
 Start with the [project README](../README.md) and [offline examples](../examples/README.md).
-v0.1.1 adds built-in REST/Gateway bot connections to the asynchronous core.
+v0.2.0 adds typed commands, async checks, cooldowns, help and message operations
+to the live REST/Gateway core.
 
 | Guide | Contents |
 | --- | --- |
@@ -19,7 +20,7 @@ v0.1.1 adds built-in REST/Gateway bot connections to the asynchronous core.
 | [Versioning](VERSIONING.md) | MAJOR.MINOR.PATCH and compatibility policy |
 | [Releasing](RELEASING.md) | Metadata, tags, checks and release assets |
 | [Publishing](PUBLISHING.md) | GitHub permissions and optional Conan credentials |
-| [Roadmap](ROADMAP.md) | Planned live transport and subsequent features |
+| [Roadmap](ROADMAP.md) | Completed milestones and planned features |
 
 [Changelog](../CHANGELOG.md) · [Contributing](../CONTRIBUTING.md) ·
 [Security](../SECURITY.md) · [License notices](../NOTICE)

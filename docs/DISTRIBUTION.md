@@ -2,7 +2,7 @@
 
 The package name is **yl-discord-cpp**, repository **yl-discord.cpp**, CMake
 package **ylDiscord**, target **yl::discord**, include **yl/discord.hpp**.
-v0.1.1 packages include the live bot REST/Gateway transport and the offline testing core.
+v0.2.0 packages include the live bot REST/Gateway transport and the offline testing core.
 
 ## Source archives / CMake
 
@@ -12,7 +12,7 @@ Build using the [installation guide](BUILDING.md), or add the extracted source
 with `add_subdirectory()`. Source archives exclude credentials, build outputs and
 fetched dependencies. `SHA256SUMS` accompanies release assets.
 
-Installed consumers use `find_package(ylDiscord 0.1 CONFIG REQUIRED)` and
+Installed consumers use `find_package(ylDiscord 0.2 CONFIG REQUIRED)` and
 `target_link_libraries(my_bot PRIVATE yl::discord)`. Asio >= 1.30.2, libcurl with TLS/ws/wss/async DNS and nlohmann/json are required
 separately. Match the compiler ABI, architecture and runtime for binary packages.
 
@@ -34,7 +34,7 @@ configured remote, consumers can add:
 
 ```ini
 [requires]
-yl-discord-cpp/0.1.1
+yl-discord-cpp/0.2.0
 
 [generators]
 CMakeDeps
@@ -48,7 +48,7 @@ until that remote and credentials are configured.
 
 ## vcpkg overlay
 
-Download/extract the release's `yl-discord.cpp-v0.1.1-vcpkg-overlay.zip`.
+Download/extract the release's `yl-discord.cpp-v0.2.0-vcpkg-overlay.zip`.
 It contains `vcpkg-overlay/yl-discord-cpp/portfile.cmake` and `vcpkg.json`.
 The generated port pins an exact source commit and SHA512; no placeholders remain.
 
@@ -71,7 +71,7 @@ Releases attach MINGW64 and UCRT64 `.pkg.tar.zst` packages and a source recipe Z
 Install only the package matching your active terminal, for example:
 
 ```sh
-pacman -U ./mingw-w64-x86_64-yl-discord-cpp-0.1.1-1-any.pkg.tar.zst
+pacman -U ./mingw-w64-x86_64-yl-discord-cpp-0.2.0-1-any.pkg.tar.zst
 ```
 
 Pacman resolves the declared Asio/runtime dependencies. The library DLL, import

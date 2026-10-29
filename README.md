@@ -10,15 +10,16 @@ A C++20 Discord **bot** library built around coroutines, classes and a small API
 A personal project by [Cavanshirpro](https://github.com/Cavanshirpro), inspired by
 the ease of use of [discord.py](https://github.com/Rapptz/discord.py).
 
-**v0.1.1 completes the initial live-message milestone:** bot login, Gateway API
-v10, prefix commands, asynchronous REST replies, reconnect/resume and rate limits.
+**v0.2.0 adds an everyday command toolkit and message operations:** typed arguments,
+async checks, bounded cooldowns, generated help, Cog removal, fetch/edit/delete and
+reactions, on top of live REST/Gateway connections, reconnect/resume and rate limits.
 It is an independent implementation with an experimental API, not a complete
 discord.py port. Slash commands, UI, voice, sharding and broad guild/member APIs
 are still planned.
 
 **Downloads:** [GitHub Releases](https://github.com/Cavanshirpro/yl-discord.cpp/releases)
-| [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1.zip)
-| [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1.tar.gz)
+| [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.2.0/yl-discord.cpp-v0.2.0.zip)
+| [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.2.0/yl-discord.cpp-v0.2.0.tar.gz)
 | [Release notes](release.md)
 
 ## A small bot
@@ -55,6 +56,7 @@ lazy: await or spawn them. Blocking I/O and CPU work still block the event loop.
 - Bot-token REST authentication and Gateway discovery/Hello/Identify/Ready.
 - Heartbeat jitter/ACK tracking, fatal close handling and bounded reconnect/resume.
 - Message events, prefix commands, aliases, quoted arguments and Context send/reply.
+- Bound message fetch/edit/delete and Unicode/custom own reactions.
 - Typed/optional command parameters, custom converters, async checks, bounded cooldowns and opt-in help.
 - Client/Bot subclasses, multiple listeners and Cog-owned class callbacks.
 - Cog-wide command removal that retains callbacks already in progress.
@@ -108,7 +110,7 @@ See [building and installation](docs/BUILDING.md) for MSVC and offline configura
 ## Consume
 
 ```cmake
-find_package(ylDiscord 0.1 CONFIG REQUIRED)
+find_package(ylDiscord 0.2 CONFIG REQUIRED)
 target_link_libraries(my_bot PRIVATE yl::discord)
 ```
 
@@ -133,7 +135,7 @@ requires the [documented credentials](docs/PUBLISHING.md).
 [Release process](docs/RELEASING.md) · [Changelog](CHANGELOG.md)
 
 No measured performance advantage over discord.py is claimed. This release
-establishes the live message flow; broader functionality follows the roadmap.
+expands command and message ergonomics; broader functionality follows the roadmap.
 
 Copyright (C) 2026 Cavanshirpro. **LGPL-3.0-or-later**. See [LICENSE](LICENSE),
 [COPYING](COPYING), [NOTICE](NOTICE) and [third-party notices](THIRD_PARTY.md).

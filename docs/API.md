@@ -1,4 +1,4 @@
-# API reference — v0.1.1
+# API reference — v0.2.0
 
 Include `<yl/discord.hpp>` and use namespace `yl::discord`. Generated headers
 come from CMake; link the `yl::discord` target. The testing transport has a
@@ -56,7 +56,7 @@ retained until `run()` drains after shutdown. Override `on_error()` to handle it
 or call `close()` there for fail-fast behavior.
 
 Mutate registries/options before `run()` or on its executor. Only `dispatch()`
-and `stop()` are intended for cross-thread entry. Never call `run()` concurrently
+and `close()`/`stop()` are intended for cross-thread entry. Never call `run()` concurrently
 or recursively. Hook/listener/command completion order is unspecified.
 
 ## Bot, commands and Context

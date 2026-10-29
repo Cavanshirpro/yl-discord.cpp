@@ -1,63 +1,62 @@
-# yl-discord.cpp v0.1.1
+# yl-discord.cpp v0.2.0
 
-The first normal release in the v0.1 line, completing the live bot message flow
-on top of the v0.1.0 offline foundation. Package version: **0.1.1**.
+This release extends the live bot core with an everyday command toolkit and
+awaitable message operations. Package version: **0.2.0**. Normal GitHub release.
 
-## Live bot support
+## Commands
 
-- Default Client/Bot constructors, `run(token)`, awaitable `start()`, `close()`
-  and `token_from_env()` for DISCORD_BOT_TOKEN.
-- Bot-authenticated REST and Gateway API v10 discovery/Hello/Identify/Ready.
-- Heartbeat jitter/ACK, reconnect/resume, fatal close handling and identify budgets.
-- MESSAGE_CREATE → prefix command → `co_await ctx.reply(...)` → actual HTTP request.
-- Nonblocking curl multi HTTP, verified TLS, deadlines and bounded response bodies.
-- Route/shared-bucket/global limits with asynchronous 429 waiting and bounded retries.
-- A 401 stops later requests; uncertain POST failures are not retried automatically.
-- Fragmented WebSocket messages, control frames and repeated-sequence suppression.
-- Network shutdown during requests, handshakes and rate-limit waits.
-- Live ping/echo example with class-based events and Ctrl+C handling.
+- `command<Args...>()` binds owning typed parameters after Context; trailing
+  `std::optional<T>` parameters are supported.
+- Built-in string, integer, finite floating-point, bool and Snowflake/mention
+  converters; applications can specialize `convert_argument<T>()`.
+- Strict arity and conversion errors, plus `Context::argument<T>()` for manual parsing.
+- Global and command-level asynchronous checks, including guild-only, DM-only
+  and explicit user-ID helpers.
+- Sliding-window cooldowns with global/user/channel/guild scopes, shared aliases,
+  monotonic retry durations, reset support and bounded bucket counts.
+- Owned command metadata, generated usage, hidden help entries and opt-in
+  `add_help_command()` with UTF-8-safe pagination.
+- Invocation-aware `on_command_error(Context, exception_ptr)` and original aliases.
+- Cog-wide command removal with in-flight callback/check ownership preserved.
 
-## Release automation
+## Messages
 
-VERSION/release metadata changes on main now create an annotated version tag and
-**call full publication directly**. A GITHUB_TOKEN-created tag therefore still
-leads to a published GitHub Release with files. Manually pushed tags also work.
-Assets upload to a draft first; only a completed upload becomes public. Retrying
-an already complete release keeps its files unchanged.
+- Client, bound Message and RestClient fetch/edit/delete helpers.
+- Unicode/custom reaction creation and removal of the current bot's reaction.
+- Mention suppression repeated on edits; content-only edits preserve other fields.
+- URL-encoded emoji paths, normal empty 204 handling and shared rate-limit/cancellation behavior.
+- Generic ProtocolError diagnostics for malformed successful message responses.
+- MemoryTransport seeded snapshots and action records, with no transport ownership cycles.
+- Existing send-only custom transports remain source-compatible; optional operations
+  default to lazy unsupported-operation errors.
 
-## Validation and compatibility
+## Compatibility and validation
 
-Core tests, eleven local HTTP/WebSocket scenarios, installed consumers and package
-builds cover the actual frame/JSON flow. CI includes Linux GCC/Clang, ASan/UBSan,
-Windows MSVC/MinGW, Conan static/shared, vcpkg and both MSYS2 environments.
-Automated tests do not use a real Discord credential. An authenticated Discord
-smoke test remains an owner-initiated step.
+Rebuild consumers for this minor release: the public virtual transport interface
+and experimental object layouts changed. The original manual Context callback
+overload remains supported. Help is opt-in and checks do not request Discord permissions.
+Typed conversion failures consume a cooldown slot after checks have succeeded.
 
-**Rebuild v0.1.0 consumers.** Public object layouts expanded for networking.
-Pre-1.0 shared libraries now use full-version soname/DLL runtime names to prevent
-an old application from loading a new incompatible layout. Match compiler,
-runtime and dependency versions for binary packages.
+Validation includes 13 core scenarios, 10 command scenarios, 12 local HTTP/WebSocket
+scenarios, installed package consumers and release-tool tests. CI covers Linux
+GCC/Clang, Windows MSVC/MinGW, static/shared builds, ASan/UBSan, Conan, vcpkg and
+MSYS2 MINGW64/UCRT64. Tests use local fixtures, never a real Discord credential.
+The authenticated Discord smoke test remains owner-initiated.
 
-The API remains experimental. Slash commands, interactions/UI, voice, compression,
-sharding, cache and broad guild/member models are not implemented. No measured
-performance advantage over discord.py is claimed. Outgoing messages disable
-automatic mentions. Prefix commands need Message Content Intent in code and in
-the Discord Developer Portal.
+Slash commands, UI, embeds, attachments, broad guild/member APIs, voice, sharding
+and production caches remain planned. No performance advantage is claimed without
+equivalent-workload measurements.
 
-## Downloads
+## Downloads and guides
 
-- [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1.zip)
-- [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1.tar.gz)
-- [vcpkg overlay](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1-vcpkg-overlay.zip)
-- [MINGW64 package](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/mingw-w64-x86_64-yl-discord-cpp-0.1.1-1-any.pkg.tar.zst)
-- [UCRT64 package](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/mingw-w64-ucrt-x86_64-yl-discord-cpp-0.1.1-1-any.pkg.tar.zst)
-- [MSYS2 recipe](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/yl-discord.cpp-v0.1.1-msys2-recipe.zip)
-- [Release notes](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/release.md)
-- [SHA256SUMS](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.1.1/SHA256SUMS)
+Release assets include source ZIP/TAR.GZ, vcpkg overlay, MINGW64/UCRT64 native
+packages, MSYS2 recipe, release notes and SHA256SUMS. Optional Conan remote upload
+still requires owner-configured credentials; no central-registry listing is claimed.
 
-These are project-hosted packages; central registry inclusion is separate.
-Optional Conan remote upload needs owner-configured credentials.
+- [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.2.0/yl-discord.cpp-v0.2.0.zip)
+- [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.2.0/yl-discord.cpp-v0.2.0.tar.gz)
+- [Commands](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.2.0/docs/COMMANDS.md)
+- [Messages](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.2.0/docs/MESSAGES.md)
+- [Live setup](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.2.0/docs/LIVE_BOTS.md)
 
-See [live setup](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.1.1/docs/LIVE_BOTS.md)
-and [documentation](https://github.com/Cavanshirpro/yl-discord.cpp/tree/v0.1.1/docs).
-Copyright (C) 2026 Cavanshirpro. **LGPL-3.0-or-later**; dependencies retain their licenses.
+Licensed under **LGPL-3.0-or-later**.

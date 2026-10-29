@@ -1,7 +1,8 @@
 # Releasing
 
 Versions use [MAJOR.MINOR.PATCH](VERSIONING.md). Published tags/assets are immutable;
-v0.1.0 remains the historical offline prerelease, and v0.1.1 completes live messages.
+v0.1.0 remains the historical offline prerelease, v0.1.1 completes live messages,
+and v0.2.0 adds the command toolkit and message operations.
 
 ## Prepare and publish automatically
 
@@ -22,8 +23,8 @@ Normal releases also become the latest release.
 Manual tag pushes and manual publication of an existing tag remain supported:
 
 ```sh
-git tag -a v0.1.1 -m "yl-discord.cpp v0.1.1"
-git push origin v0.1.1
+git tag -a v0.2.0 -m "yl-discord.cpp v0.2.0"
+git push origin v0.2.0
 ```
 
 Use one path per release. A manual `release-version` run is available when metadata
@@ -52,7 +53,7 @@ After committing:
 
 ```sh
 python scripts/package_source.py --ref HEAD
-python scripts/check_release.py --archive build/dist/yl-discord.cpp-v0.1.1.tar.gz
+python scripts/check_release.py --archive build/dist/yl-discord.cpp-v0.2.0.tar.gz
 ```
 
 Archives contain committed files only, excluding local credentials/build outputs

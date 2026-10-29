@@ -14,7 +14,7 @@ line are intended to remain source-compatible. CMake version selection does not
 promise binary compatibility: pre-1.0 object layouts remain experimental. Shared
 libraries use the full MAJOR.MINOR.PATCH in their soname/DLL runtime name before
 1.0 to prevent accidental loading into an old binary. Rebuild v0.1.0 consumers
-for v0.1.1. No cross-compiler/standard-library ABI compatibility is promised.
+for v0.1.1 and rebuild again for the v0.2.0 minor release. No cross-compiler/standard-library ABI compatibility is promised.
 
 `VERSION` is the canonical package version, read by CMake and Conan. CMake generates
 public version constants. `release.json` adds the exact tag and a GitHub
@@ -22,6 +22,7 @@ public version constants. `release.json` adds the exact tag and a GitHub
 The boolean is GitHub release metadata, not an extra semantic-version component.
 v0.1.0 is marked as a prerelease because it was an offline foundation. v0.1.1 completes the initial live-message milestone
 and is published as a normal GitHub release.
+v0.2.0 adds the command toolkit and message operations as a normal minor release.
 
 For a later release, prepare completed Markdown notes mentioning the new tag:
 

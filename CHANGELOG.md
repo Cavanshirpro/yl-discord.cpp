@@ -2,6 +2,23 @@
 
 Versions follow [MAJOR.MINOR.PATCH](docs/VERSIONING.md).
 
+## [0.2.0] - 2026-10-29
+
+- Typed and trailing optional command arguments, custom converters and strict arity.
+- Async global/per-command checks, invocation-aware errors and alias metadata.
+- Bounded sliding-window cooldowns with scopes, reset, retry durations and shared aliases.
+- Generated usage, owned command metadata and opt-in paginated help.
+- Cog-wide removal retaining checks/callbacks already in flight.
+- Awaitable message fetch/edit/delete and current-bot Unicode/custom reactions.
+- Mention suppression on content edits and generic malformed-response diagnostics.
+- MemoryTransport seeded snapshots and action records without transport cycles.
+- New command/message guides, offline command example and installed ABI consumer coverage.
+- Thirteen core, ten command, twelve local HTTP/WebSocket and eleven release-tool scenarios.
+
+New minor version: rebuild consumers because public virtual interfaces and object
+layouts changed. Original manual commands and send-only custom transports remain
+source-compatible. Authenticated Discord smoke testing remains owner-initiated.
+
 ## [0.1.1] - 2026-10-27
 
 Completed the initial live bot message flow:
