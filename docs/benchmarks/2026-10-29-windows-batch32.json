@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "workload": "offline prebuilt-message dispatch -> prefix ping -> in-memory reply",
+  "measured_at_utc": "2026-10-29T05:34:22.924942+00:00",
+  "label": "Windows x64 development desktop; other applications running; MinGW shared Release -O3",
+  "platform": "Windows-11-10.0.22631-SP0",
+  "architecture": "AMD64",
+  "source_commit": "f1c837c46c313c1d56e6fc4cd1bb8f73e3f650d2",
+  "source_tree_dirty": false,
+  "iterations": 10000,
+  "batch_size": 32,
+  "repeats": 3,
+  "summary": {
+    "cpp": {
+      "commands_per_second": 244827.4089,
+      "peak_resident_bytes": 13529088,
+      "latency_us": {
+        "p50": 49.3,
+        "p95": 109.3,
+        "p99": 185.9
+      }
+    },
+    "python": {
+      "commands_per_second": 19989.981021512012,
+      "peak_resident_bytes": 70905856,
+      "latency_us": {
+        "p50": 739.2,
+        "p95": 1676.1,
+        "p99": 3006.0
+      }
+    }
+  },
+  "samples": {
+    "cpp": [
+      {
+        "implementation": "yl-discord.cpp",
+        "version": "0.4.0",
+        "compiler": "GCC 16.2.0",
+        "configuration": "Release",
+        "iterations": 10000,
+        "batch_size": 32,
+        "dispatch_seconds": 0.051688,
+        "commands_per_second": 193468.5033,
+        "latency_us": {
+          "p50": 60.5,
+          "p95": 139.3,
+          "p99": 215.9
+        },
+        "peak_resident_bytes": 13529088
+      },
+      {
+        "implementation": "yl-discord.cpp",
+        "version": "0.4.0",
+        "compiler": "GCC 16.2.0",
+        "configuration": "Release",
+        "iterations": 10000,
+        "batch_size": 32,
+        "dispatch_seconds": 0.0372144,
+        "commands_per_second": 268713.1863,
+        "latency_us": {
+          "p50": 44.7,
+          "p95": 85.4,
+          "p99": 175.2
+        },
+        "peak_resident_bytes": 13524992
+      },
+      {
+        "implementation": "yl-discord.cpp",
+        "version": "0.4.0",
+        "compiler": "GCC 16.2.0",
+        "configuration": "Release",
+        "iterations": 10000,
+        "batch_size": 32,
+        "dispatch_seconds": 0.0408451,
+        "commands_per_second": 244827.4089,
+        "latency_us": {
+          "p50": 49.3,
+          "p95": 109.3,
+          "p99": 185.9
+        },
+        "peak_resident_bytes": 13529088
+      }
+    ],
+    "python": [
+      {
+        "implementation": "discord.py",
+        "version": "2.7.1",
+        "python": "3.13.5",
+        "configuration": "CPython default GC",
+        "iterations": 10000,
+        "batch_size": 32,
+        "dispatch_seconds": 0.5364427999999998,
+        "commands_per_second": 18641.316464681797,
+        "latency_us": {
+          "p50": 782.7,
+          "p95": 1737.9,
+          "p99": 3006.0
+        },
+        "peak_resident_bytes": 70905856
+      },
+      {
+        "implementation": "discord.py",
+        "version": "2.7.1",
+        "python": "3.13.5",
+        "configuration": "CPython default GC",
+        "iterations": 10000,
+        "batch_size": 32,
+        "dispatch_seconds": 0.5002506000000001,
+        "commands_per_second": 19989.981021512012,
+        "latency_us": {
+          "p50": 739.2,
+          "p95": 1676.1,
+          "p99": 2307.4
+        },
+        "peak_resident_bytes": 70852608
+      },
+      {
+        "implementation": "discord.py",
+        "version": "2.7.1",
+        "python": "3.13.5",
+        "configuration": "CPython default GC",
+        "iterations": 10000,
+        "batch_size": 32,
+        "dispatch_seconds": 0.44193399999999994,
+        "commands_per_second": 22627.813202876452,
+        "latency_us": {
+          "p50": 622.6,
+          "p95": 1617.6,
+          "p99": 3864.0
+        },
+        "peak_resident_bytes": 71094272
+      }
+    ]
+  },
+  "limitations": [
+    "No Gateway, HTTP, TLS, rate limits, parsing benchmark or real Discord account.",
+    "Input model construction and startup are excluded from dispatch timing; peak process memory includes startup.",
+    "Both fixtures retain reply requests and message snapshots; model/features/cache implementations differ.",
+    "This single-host synthetic workload is not an end-to-end or feature-equivalent bot comparison."
+  ]
+}

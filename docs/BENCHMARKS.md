@@ -26,7 +26,32 @@ are retained. These numbers apply only to the fixture below. Model/feature sets,
 startup costs, retained fixture storage and instrumentation differ; this table
 does not establish equivalent live-bot performance or general superiority.
 
+### Batch-size sensitivity
+
+Two additional runs on the same desktop used 10,000 events per process and three
+fresh-process repeats at clean commit
+`f1c837c46c313c1d56e6fc4cd1bb8f73e3f650d2`. The library implementation was unchanged;
+the desktop was still uncontrolled. Medians were:
+
+| Batch size | Implementation | Commands/s | p50 (µs) | p95 (µs) | p99 (µs) |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 1 | yl-discord.cpp 0.4.0 | 200,905 | 2.2 | 4.3 | 9.1 |
+| 1 | discord.py 2.7.1 | 13,575 | 39.6 | 107.5 | 224.8 |
+| 32 | yl-discord.cpp 0.4.0 | 244,827 | 49.3 | 109.3 | 185.9 |
+| 32 | discord.py 2.7.1 | 19,990 | 739.2 | 1,676.1 | 3,006.0 |
+
+The [batch-1 samples](benchmarks/2026-10-29-windows-batch1.json) and
+[batch-32 samples](benchmarks/2026-10-29-windows-batch32.json) include all memory
+measurements and environment metadata. Batched dispatch queues work before each
+drain, so its completion latency includes that queueing. These values are not
+network response latency. Batch size, process variation and fixture behavior must
+be kept explicit when comparing or repeating the results.
+
 ## Reproduce
+
+The benchmark tools were added after the immutable v0.4.0 release tag. Use a
+checkout of `54fce8924f2bb7d33d3ea58ca181a2dd4be5bdd8` or a later main commit
+containing `benchmarks/`; the v0.4.0 release source archive does not include them.
 
 Configure with the same [dependencies](BUILDING.md) as the library, using Release:
 
