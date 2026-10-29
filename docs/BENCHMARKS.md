@@ -69,6 +69,10 @@ For the local MINGW64 preset, keep its runtime on PATH. Multi-config generators
 need `--config Release` and the corresponding executable path. Custom shared curl
 prefixes also need the [runtime search path](BUILDING.md) configured. The benchmark
 target is OFF by default and is not installed as part of the production package.
+The runner rejects an unexpected implementation or a C++ executable whose version
+differs from the checkout's VERSION. Rebuild after changing versions. Matching a
+version alone does not establish matching source: use the executable you just built
+from the recorded clean checkout, rather than an older build of that version.
 
 The Python adapter is pinned to discord.py 2.7.1 and the recorded dependency set.
 Python >= 3.10 is supported by the harness; record the actual runtime version with
