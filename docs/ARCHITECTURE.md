@@ -9,7 +9,7 @@ The same command code runs with built-in networking or MemoryTransport.
 | User API | Hooks, listeners, prefix commands and Cog | Implemented |
 | Models | Owned User/Message/Ready, Snowflake and intents | Initial scope |
 | Runtime | Coroutine tasks, timers, executor and errors | Standalone Asio |
-| Message transport | Awaitable sends, fetch, edit, delete and own reactions | REST and memory implementations |
+| Message transport | Rich messages, uploads, fetch, edit, delete and own reactions | REST and memory implementations |
 | REST | Verified TLS, deadlines, buckets/global limits | libcurl multi |
 | Gateway | WebSocket, heartbeat and session resume | JSON API v10 |
 | Broader state | Cache, partial guild models, shard coordination | Planned |
@@ -32,6 +32,16 @@ transfers. Its timer pump runs only with active transfers. Completed REST
 connections can be reused by curl. Gateway reads/writes wait on socket readiness;
 idle connections do not run a polling timer. DNS must be asynchronous in libcurl.
 No C++ thread is created per command/request by the library.
+
+`FileUpload` owns immutable bytes through a shared buffer. Copying a message
+request shares those bytes while copying its filename/description/media metadata.
+The pending transfer retains its MIME form and buffer owners until curl releases
+the request. A 429 replay creates fresh read cursors over the same bytes; it does
+not reuse an exhausted cursor or build a second complete multipart-body string.
+Per-file, combined-byte and attachment-count limits bound each request, but they
+are not a global limit on concurrent queued uploads. Applications must bound their
+own admission until queue/backpressure controls are implemented. File streams and
+progress callbacks remain future work; see [file semantics](FILES.md).
 
 ## Runtime contract
 
