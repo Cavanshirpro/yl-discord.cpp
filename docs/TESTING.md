@@ -20,6 +20,11 @@ during removal, registration rollback, raw events, repeated run, executor use
 and stop/resume behavior. Assertions remain active in Release builds because
 the suite does not use the disabled `assert` macro.
 
+The command suite covers strict numeric/ID conversion, custom converters, optional
+parameters, arity errors, preserved invocation Context, asynchronous check ownership,
+cooldown alias sharing/scopes/reset/expiry/capacity, failed-check admission,
+UTF-8 help pagination and Cog-wide removal during a suspended callback.
+
 `tests/consumer` links/runs against the installed CMake package. Conan's
 `test_package` checks an actual command/reply through the installed dependency.
 CI also relocates CMake installation prefixes and tests shared/static builds.

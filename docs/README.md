@@ -9,6 +9,7 @@ v0.1.1 adds built-in REST/Gateway bot connections to the asynchronous core.
 | [Live bots](LIVE_BOTS.md) | Bot setup, intents, ping example and shutdown |
 | [Distribution](DISTRIBUTION.md) | Conan, vcpkg overlays and native MSYS2 packages |
 | [API](API.md) | Public classes, methods and coroutine behavior |
+| [Commands](COMMANDS.md) | Typed parameters, checks, cooldowns, help and Cog removal |
 | [Architecture](ARCHITECTURE.md) | Runtime, ownership, threading and extension points |
 | [Examples](../examples/README.md) | Function-based commands and class-based bots/Cogs |
 | [Testing](TESTING.md) | Core, package consumer and publication checks |

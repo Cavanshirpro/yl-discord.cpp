@@ -4,6 +4,8 @@
 #include <yl/discord/commands.hpp>
 #include <algorithm>
 #include <cctype>
+#include <deque>
+#include <map>
 #include <unordered_set>
 #include <utility>
 
@@ -21,6 +23,48 @@ void validate_name(const std::string& name) {
 }
 
 } // namespace
+
+struct Bot::Entry {
+    std::shared_ptr<Cog> owner;
+    Command command;
+    using Clock = std::chrono::steady_clock;
+    using Key = std::pair<int, std::uint64_t>;
+    std::map<Key, std::deque<Clock::time_point>> buckets;
+
+    Key key(const Context& context) const {
+        switch (command.options.cooldown->scope) {
+        case CooldownScope::global: return {0, 0};
+        case CooldownScope::user: return {1, context.message.author.id.value()};
+        case CooldownScope::channel: return {2, context.message.channel_id.value()};
+        case CooldownScope::guild:
+            if (context.message.guild_id) return {3, context.message.guild_id->value()};
+            return {2, context.message.channel_id.value()};
+        }
+        throw std::logic_error("Invalid cooldown scope");
+    }
+
+    void consume(const Context& context) {
+        if (!command.options.cooldown) return;
+        const auto& cooldown = *command.options.cooldown;
+        const auto now = Clock::now();
+        const auto id = key(context);
+        auto found = buckets.find(id);
+        if (found == buckets.end()) {
+            // Only expired buckets may be reclaimed: evicting active users bypasses limits.
+            if (buckets.size() >= cooldown.max_buckets) {
+                std::erase_if(buckets, [&](const auto& pair) {
+                    return pair.second.empty() || now - pair.second.back() >= cooldown.per;
+                });
+            }
+            if (buckets.size() >= cooldown.max_buckets) throw CooldownCapacityExceeded{};
+            found = buckets.emplace(id, std::deque<Clock::time_point>{}).first;
+        }
+        auto& uses = found->second;
+        while (!uses.empty() && now - uses.front() >= cooldown.per) uses.pop_front();
+        if (uses.size() >= cooldown.rate) throw CommandOnCooldown(cooldown.per - (now - uses.front()));
+        uses.push_back(now);
+    }
+};
 
 std::vector<std::string> parse_arguments(std::string_view text) {
     std::vector<std::string> result;
@@ -91,6 +135,18 @@ void Bot::register_command(Command command, std::shared_ptr<Cog> owner) {
     if (!command.callback) {
         throw std::invalid_argument("Command callback cannot be empty");
     }
+    for (const auto& check : command.options.checks)
+        if (!check) throw std::invalid_argument("Command check cannot be empty");
+    if (command.options.cooldown) {
+        const auto& cooldown = *command.options.cooldown;
+        if (cooldown.rate == 0 || cooldown.per <= std::chrono::milliseconds::zero() ||
+            cooldown.per > std::chrono::hours(24 * 365) || cooldown.max_buckets == 0)
+            throw std::invalid_argument("Cooldown requires positive rate/capacity and a period within one year");
+        switch (cooldown.scope) {
+        case CooldownScope::global: case CooldownScope::user: case CooldownScope::channel: case CooldownScope::guild: break;
+        default: throw std::invalid_argument("Invalid cooldown scope");
+        }
+    }
     std::vector<std::string> names{command.name};
     names.insert(names.end(), command.options.aliases.begin(), command.options.aliases.end());
     std::unordered_set<std::string> unique;
@@ -100,10 +156,15 @@ void Bot::register_command(Command command, std::shared_ptr<Cog> owner) {
             throw std::invalid_argument("Duplicate command or alias: " + name);
         }
     }
-    auto entry = std::make_shared<Entry>(Entry{std::move(owner), std::move(command)});
+    auto entry = std::make_shared<Entry>(Entry{std::move(owner), std::move(command), {}});
     for (auto& name : names) {
         commands_.emplace(std::move(name), entry);
     }
+}
+
+bool Bot::remove_cog(const std::shared_ptr<Cog>& cog) {
+    if (!cog) return false;
+    return std::erase_if(commands_, [&](const auto& pair) { return pair.second->owner == cog; }) != 0;
 }
 
 Bot& Bot::add_cog(std::shared_ptr<Cog> cog) {
@@ -144,6 +205,80 @@ std::vector<std::string> Bot::command_names() const {
     return names;
 }
 
+std::optional<CommandInfo> Bot::get_command(std::string_view name) const {
+    auto found = commands_.find(std::string(name));
+    if (found == commands_.end()) return std::nullopt;
+    const auto& command = found->second->command;
+    return CommandInfo{command.name, command.options.aliases, command.options.description,
+                       command.options.usage, command.options.hidden};
+}
+
+std::string Bot::help_text(std::string_view name) const {
+    if (!name.empty()) {
+        auto info = get_command(name);
+        if (!info) return "Unknown command.";
+        std::string result = prefix_ + info->name;
+        if (!info->usage.empty()) result += " " + info->usage;
+        if (!info->description.empty()) result += "\n" + info->description;
+        if (!info->aliases.empty()) {
+            result += "\nAliases:";
+            for (const auto& alias : info->aliases) result += " " + prefix_ + alias;
+        }
+        return result;
+    }
+    std::string result = "Commands:";
+    for (const auto& command : command_names()) {
+        const auto info = *get_command(command);
+        if (info.hidden) continue;
+        result += "\n" + prefix_ + info.name;
+        if (!info.usage.empty()) result += " " + info.usage;
+        if (!info.description.empty()) result += " - " + info.description;
+    }
+    return result;
+}
+
+Bot& Bot::add_help_command(std::string name) {
+    CommandOptions options;
+    options.description = "Show available commands or help for one command";
+    options.usage = "[command]";
+    return command(std::move(name), [this](Context context) -> task<> {
+        if (context.args.size() > 1) throw TooManyArguments{};
+        const auto text = help_text(context.args.empty() ? std::string_view{} : context.args.front());
+        std::size_t begin = 0;
+        while (begin < text.size()) {
+            // A byte budget is conservative for Discord's UTF-16 character limit.
+            auto end = (std::min)(begin + 1900, text.size());
+            if (end < text.size()) {
+                while (end > begin && (static_cast<unsigned char>(text[end]) & 0xc0) == 0x80) --end;
+                if (end == begin) end = (std::min)(begin + 1900, text.size());
+                const auto newline = text.rfind('\n', end - 1);
+                if (newline != std::string::npos && newline > begin) end = newline + 1;
+            }
+            co_await context.send(text.substr(begin, end - begin));
+            begin = end;
+        }
+    }, std::move(options));
+}
+
+Bot& Bot::add_check(CommandCheck check) {
+    if (!check) throw std::invalid_argument("Command check cannot be empty");
+    checks_.push_back(std::make_shared<CommandCheck>(std::move(check)));
+    return *this;
+}
+
+void Bot::clear_checks() { checks_.clear(); }
+
+bool Bot::reset_cooldown(std::string_view command, const Context& context) {
+    auto found = commands_.find(std::string(command));
+    if (found == commands_.end() || !found->second->command.options.cooldown) return false;
+    return found->second->buckets.erase(found->second->key(context)) != 0;
+}
+
+task<> Bot::on_command_error(Context, std::exception_ptr error) {
+    std::rethrow_exception(error);
+    co_return;
+}
+
 void Bot::handle_message(Message message) {
     Client::handle_message(message);
     if (!message.author.bot && message.content.starts_with(prefix_)) {
@@ -152,22 +287,42 @@ void Bot::handle_message(Message message) {
 }
 
 task<> Bot::process_commands(Message message) {
-    auto arguments = parse_arguments(std::string_view(message.content).substr(prefix_.size()));
-    if (arguments.empty()) {
-        co_return;
-    }
-    auto found = commands_.find(arguments.front());
-    if (found == commands_.end()) {
-        co_return;
-    }
-    // Keep callback captures and Cog alive even if the registry changes while awaiting.
-    auto entry = found->second;
     Context context;
     context.message = std::move(message);
-    context.command_name = entry->command.name;
-    arguments.erase(arguments.begin());
-    context.args = std::move(arguments);
-    co_await entry->command.callback(std::move(context));
+    std::exception_ptr failure;
+    try {
+        auto arguments = parse_arguments(std::string_view(context.message.content).substr(prefix_.size()));
+        if (arguments.empty()) co_return;
+        auto found = commands_.find(arguments.front());
+        if (found == commands_.end()) co_return;
+        // Keep callback/check captures and Cog alive across suspension and removal.
+        auto entry = found->second;
+        context.command_name = entry->command.name;
+        context.invoked_with = std::move(arguments.front());
+        arguments.erase(arguments.begin());
+        context.args = std::move(arguments);
+        const auto checks = checks_;
+        for (const auto& check : checks)
+            if (!(co_await (*check)(context))) throw CheckFailure{};
+        for (const auto& check : entry->command.options.checks)
+            if (!(co_await check(context))) throw CheckFailure{};
+        entry->consume(context);
+        co_await entry->command.callback(context);
+        co_return;
+    } catch (...) { failure = std::current_exception(); }
+    co_await on_command_error(std::move(context), failure);
 }
+
+namespace checks {
+CommandCheck guild_only() {
+    return [](Context context) -> task<bool> { co_return context.message.guild_id.has_value(); };
+}
+CommandCheck dm_only() {
+    return [](Context context) -> task<bool> { co_return !context.message.guild_id.has_value(); };
+}
+CommandCheck user(Snowflake id) {
+    return [id](Context context) -> task<bool> { co_return context.message.author.id == id; };
+}
+} // namespace checks
 
 } // namespace yl::discord

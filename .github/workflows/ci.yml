@@ -68,7 +68,7 @@ jobs:
         run: cmake --preset default -DBUILD_SHARED_LIBS="$SHARED" -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/curl"
       - run: cmake --build --preset default --parallel 2
       - run: ctest --preset default
-      - run: build/default/yl_offline_bot && build/default/yl_class_bot
+      - run: build/default/yl_offline_bot && build/default/yl_class_bot && build/default/yl_command_bot
       - name: Relocated installed consumer
         run: |
           cmake --install build/default --prefix "$RUNNER_TEMP/install"

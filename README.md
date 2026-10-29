@@ -55,7 +55,9 @@ lazy: await or spawn them. Blocking I/O and CPU work still block the event loop.
 - Bot-token REST authentication and Gateway discovery/Hello/Identify/Ready.
 - Heartbeat jitter/ACK tracking, fatal close handling and bounded reconnect/resume.
 - Message events, prefix commands, aliases, quoted arguments and Context send/reply.
+- Typed/optional command parameters, custom converters, async checks, bounded cooldowns and opt-in help.
 - Client/Bot subclasses, multiple listeners and Cog-owned class callbacks.
+- Cog-wide command removal that retains callbacks already in progress.
 - Commands that keep working when `on_message()` is overridden.
 - Nonblocking HTTP, verified TLS, request deadlines and asynchronous bucket/global limits.
 - Network shutdown that interrupts transfers, handshakes and rate-limit waiting.
@@ -66,6 +68,18 @@ lazy: await or spawn them. Blocking I/O and CPU work still block the event loop.
 Outgoing messages disable automatic mentions. Repeated Gateway sequences are
 ignored. Uncertain POST failures are not retried automatically. See the
 [API reference](docs/API.md) for ownership, lifecycle and supported scope.
+
+Commands can bind parameters directly:
+
+```cpp
+bot.command<int, int>("add", [](Context ctx, int a, int b) -> task<> {
+    co_await ctx.reply(std::to_string(static_cast<long long>(a) + b));
+}, {.description = "Add two integers"});
+bot.add_help_command(); // !help and !help add
+```
+
+See [the command guide](docs/COMMANDS.md) for checks, cooldowns, custom converters,
+optional parameters and invocation-aware error handling.
 
 ## Build
 

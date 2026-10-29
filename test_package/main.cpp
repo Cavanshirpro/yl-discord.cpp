@@ -18,17 +18,20 @@ int main() {
     Bot bot{transport};
     // Exercise the public payload across the ABI with Win32 Unicode macros active.
     bot.spawn(transport->send_message(MessageRequest{Snowflake{42}, "transport probe", std::nullopt}));
-    bot.command("ping", [](Context ctx) -> task<> { co_await ctx.reply("Pong!"); });
+    bot.command<int>("ping", [](Context ctx, int value) -> task<> {
+        co_await ctx.reply("Pong " + std::to_string(value) + "!");
+    }, {.aliases = {"p"}, .checks = {checks::dm_only()}, .cooldown = Cooldown{}});
+    if (!bot.get_command("p") || bot.help_text("p").find("<integer>") == std::string::npos) return 1;
     Message message;
     message.id = Snowflake{100};
     message.channel_id = Snowflake{42};
-    message.content = "!ping";
+    message.content = "!p 42";
     bot.dispatch(std::move(message));
     bot.run();
     bool replied = false;
     bool probed = false;
     for (const auto& request : transport->sent()) {
-        replied = replied || (request.content == "Pong!" && request.reply_to == Snowflake{100});
+        replied = replied || (request.content == "Pong 42!" && request.reply_to == Snowflake{100});
         probed = probed || (request.content == "transport probe" && !request.reply_to);
     }
     if (transport->sent().size() != 2 || !replied || !probed) {

@@ -44,7 +44,8 @@ hook also throws, its failure is retained rather than recursively reported.
 
 `TaskError` has `source` and `std::exception_ptr exception`. Sources currently
 identify an event hook/listener, `commands`, or the caller-provided spawn label.
-Command-specific error types/labels and listener removal are not implemented.
+Command errors can first be handled with Bot::on_command_error(Context, exception_ptr).
+Listener removal is not implemented.
 In a live session, an unhandled event/command error is logged immediately and
 retained until `run()` drains after shutdown. Override `on_error()` to handle it
 or call `close()` there for fail-fast behavior.
@@ -69,14 +70,16 @@ bot.command("echo", [](Context ctx) -> task<> {
 ```
 
 `command(name, callback, CommandOptions = {})` returns Bot&. CommandOptions holds
-`aliases` and descriptive text. Description is stored but automatic help is not
-implemented. Empty callbacks or duplicate names/aliases throw
+`aliases`, `description`, `usage`, `hidden`, asynchronous `checks` and optional
+`cooldown`. `command<Args...>(name, callback, options)` binds owning typed parameters
+after Context, with trailing std::optional parameters supported. Empty callbacks or duplicate names/aliases throw
 `std::invalid_argument`. `command_names()` returns sorted canonical names.
 `remove_command(name_or_alias)` removes every alias of that command and returns
 whether a command was found. Already-running commands can finish.
 
-Context owns `message`, canonical `command_name` and parsed `args` (excluding
-the name). `send(content)` sends to that message's channel; `reply(content)` also
+Context owns `message`, canonical `command_name`, `invoked_with` (the name/alias used)
+and parsed `args` (excluding the name). `argument<T>(index)` converts a token.
+`send(content)` sends to that message's channel; `reply(content)` also
 sets its message reference. Both return a bound `task<Message>` result.
 
 Overriding `on_message()` does not disable commands. Bot-authored messages still
@@ -86,13 +89,25 @@ preserves quoted empty arguments and allows backslash escaping outside single
 quotes. It does not expand variables, globs or shell commands. A trailing
 escape or unclosed quote throws `ArgumentError`.
 
+`add_check()` / `clear_checks()` manage global asynchronous checks. Per-command
+checks run next; cooldown admission follows successful checks. Override
+`on_command_error(Context, exception_ptr)` for invocation-aware failures. The
+default forwards the original exception to Client's error handling.
+
+`get_command(name_or_alias)` returns an optional CommandInfo metadata snapshot;
+`help_text(name = {})` formats usage/aliases/descriptions. `add_help_command()`
+registers opt-in, paginated help. `reset_cooldown(name, context)` clears one bucket.
+See the [command guide](COMMANDS.md) for converters, error classes, cooldown scopes,
+capacity bounds and complete examples.
+
 ## Cog
 
 Derive from `Cog` and implement `std::vector<Command> commands()`. Each Command
 has `name`, `callback` and `options`. Pass a shared instance to `bot.add_cog(cog)`.
 Registered and running entries retain the Cog, so callbacks may capture `this`.
-A conflicting definition rolls back that Cog's registrations. Cog-wide unload
-and lifecycle hooks are future work; remove individual commands for now.
+A conflicting definition rolls back that Cog's registrations.
+`remove_cog(shared_ptr<Cog>)` removes all its current commands/aliases while allowing
+in-flight work to finish. Lifecycle hooks and managed tasks are future work.
 See the complete [class example](../examples/class_bot.cpp).
 
 ## Models
