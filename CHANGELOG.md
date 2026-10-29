@@ -2,6 +2,20 @@
 
 Versions follow [MAJOR.MINOR.PATCH](docs/VERSIONING.md).
 
+## [0.4.0] - 2026-10-29
+
+- Immutable shared FileUpload buffers, preserving binary and NUL bytes.
+- Bounded callback-based multipart create/reply/edit through the async REST engine.
+- Explicit retained attachment IDs for append, replace and removal operations.
+- Attachment response metadata and offline upload/retention records.
+- Per-file/combined/request budgets and filename/MIME/description validation.
+- Fresh MIME cursors on 429 replay and cancellation during an active large upload.
+- File guide, report example and expanded static/shared installed consumers.
+
+Validation includes 13 core, 10 command, 15 event, 6 embed, 6 file, 16 local
+network and 11 release-tool scenarios. Rebuild consumers for the extended models.
+No implicit disk reads, downloads or real Discord credential tests are performed.
+
 ## [0.3.0] - 2026-10-29
 
 - Predicate-based `wait_for<Message/Ready/RawEvent>()` with owned results and deadlines.

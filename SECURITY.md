@@ -1,6 +1,6 @@
 # Security policy
 
-The 0.3.x line is experimental. v0.3.0 includes bot-token REST/Gateway networking with TLS verification, deadlines
+The 0.4.x line is experimental. v0.4.0 includes bot-token REST/Gateway networking with TLS verification, deadlines
 and bounded retries. The broader Discord API remains under development.
 
 Report suspected vulnerabilities through GitHub's private vulnerability report
@@ -27,3 +27,8 @@ Typed rich messages suppress mentions by default; enabling parse flags or ID
 whitelists is an explicit application choice. Typed validation rejects malformed
 UTF-8 and bounds message/embed fields before HTTP. Low-level raw REST remains
 caller-validated. Event predicates run on the event loop and must not block it.
+
+Uploads use caller-supplied immutable buffers. Filename/header checks, per-file/
+combined byte caps and a multipart request budget run before transfer. No file is
+read from disk or downloaded automatically. Retaining old attachment IDs is an
+explicit edit decision; new uploads never silently choose which old files to delete.

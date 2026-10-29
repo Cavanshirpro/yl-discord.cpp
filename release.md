@@ -1,62 +1,62 @@
-# yl-discord.cpp v0.3.0
+# yl-discord.cpp v0.4.0
 
-This normal minor release adds event control and rich messages to the live bot
-and command core. Package version: **0.3.0**.
+This normal minor release adds bounded, buffered multipart uploads and explicit
+attachment editing. Package version: **0.4.0**.
 
-## Event control
+## Files and messages
 
-- `wait_for<Message/Ready/RawEvent>()` observes future dispatches with synchronous
-  predicates, owned results and monotonic deadlines.
-- Standard stop tokens (including cross-thread requests), native Asio cancellation
-  and `close()` cancellation release pending waits and predicate captures.
-- Removable Message/Ready/RawEvent subscriptions return weak ListenerConnections.
-  Disconnection retains callbacks already snapshotted for an event.
-- Predicate failures are isolated; foreign event loops are rejected. Paused time
-  still counts toward a wait's deadline. Unstarted waits register nothing.
-- `is_cancelled(error_code)` recognizes header-only Asio cancellation across
-  shared-library error-category instances.
+- FileUpload owns immutable shared byte buffers with independent filename,
+  description and content-type metadata. Copies do not duplicate large buffers.
+- Text and binary construction preserve embedded NULs. There are no implicit
+  filesystem reads, URL downloads or transcoding operations.
+- MessageOptions::files supports file-only sends/replies and attachment:// embeds.
+- REST uses libcurl MIME read/seek callbacks over the existing async multi engine,
+  without constructing a second full multipart byte string.
+- Server 429 retries use fresh upload cursors; uncertain writes are not retried.
+- MessageEditOptions requires explicit retained attachment IDs when adding files;
+  omitted fields preserve files, an empty retention vector clears/replaces them.
+- Response Attachment models retain IDs, names, uint64 sizes, descriptions, media
+  types and URL metadata. Message values remain owned snapshots.
+- MemoryTransport stores synthetic metadata and records upload/retention intent.
+  Unsupported older text-edit transports reject attachment edits explicitly.
 
-## Rich messages
+## Bounds and lifecycle
 
-- Owned Embed, EmbedField, EmbedFooter and EmbedAuthor models.
-- MessageOptions for content/embed sends and replies with explicit AllowedMentions.
-- MessageEditOptions distinguishes preserving omitted content/embeds from clearing
-  them with an explicitly empty string/vector.
-- Outgoing UTF-8 validation, conservative UTF-16 limits, per-field/combined embed
-  bounds, URL policy and mention flag/whitelist validation before HTTP.
-- Mention parsing and reply pings remain disabled unless explicitly enabled.
-- Supported rich fields parse from Gateway and REST into bound message snapshots.
-- MemoryTransport stores rich snapshots and records structured edit intent.
-- Older text-edit custom transports retain their fallback for content-only edits;
-  unsupported rich edits fail explicitly.
+Typed limits are 20 MiB per file, 24 MiB combined new bytes and 10 total retained/
+new attachments. The multipart builder checks a 25 MiB request budget with 64 KiB
+reserved for framing; large JSON metadata can reduce the remaining file budget.
+Filename/MIME/description validation prevents control/header injection and rejects
+ambiguous upload labels. Discord still enforces its own current permissions,
+media checks and account/channel limits.
 
-## Packaging and validation
+Uploads share TLS validation, rate-limit queues, deadlines, User-Agent metadata
+and close cancellation. Tests cancel an active 8 MiB upload without waiting for
+the server to drain its socket. Rebuild consumers: public models extend in this minor.
 
-Rebuild consumers: this minor extends public models and virtual interfaces.
-Installed shared consumers now verify their configured curl runtime as well as
-command, message, event and rich-payload behavior. Runtime discovery instructions
-cover custom dynamic curl prefixes. Five offline examples and one live ping bot
-compile in CI; automated examples never use a real Discord credential.
+## Validation and distribution
 
-Validation includes 13 core, 10 command, 15 event, 6 embed, 14 local HTTP/WebSocket
-and 11 release-tool scenarios. Platform coverage includes Linux GCC/Clang,
-Windows MSVC/MinGW, static/shared builds, ASan/UBSan, Conan, vcpkg and native
-MSYS2 MINGW64/UCRT64 consumers. Authenticated Discord smoke testing remains
-owner-initiated. No measured advantage over discord.py is claimed.
+Validation includes 13 core, 10 command, 15 event, 6 embed, 6 file, 16 local
+HTTP/WebSocket and 11 release-tool scenarios. Multipart fixtures verify binary
+bytes, UTF-8 names, NULs, 429 replay, retained/new/cleared files and file-only replies.
+Installed consumers exercise the new file payload across static/shared boundaries.
 
-Attachments, slash commands, UI, broad guild/member APIs, voice, sharding,
-production caches and managed Cog background tasks remain planned.
-
-## Assets and guides
+CI covers Linux GCC/Clang, Windows MSVC/MinGW, ASan/UBSan, Conan, vcpkg and native
+MSYS2 MINGW64/UCRT64. Six offline examples and a live ping bot compile; automated
+runs never contact Discord or load a real bot credential. Authenticated Discord
+smoke testing remains owner-initiated.
 
 Release assets include source ZIP/TAR.GZ, vcpkg overlay, native MINGW64/UCRT64
 packages, MSYS2 recipe, release notes and SHA256SUMS. Optional Conan remote upload
 requires owner-configured credentials; no central-registry listing is claimed.
 
-- [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.3.0/yl-discord.cpp-v0.3.0.zip)
-- [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.3.0/yl-discord.cpp-v0.3.0.tar.gz)
-- [Events](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.3.0/docs/EVENTS.md)
-- [Embeds](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.3.0/docs/EMBEDS.md)
-- [Live setup](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.3.0/docs/LIVE_BOTS.md)
+Slash commands, UI, stream/filesystem upload sources, progress hooks, broad guild/
+member APIs, voice, sharding and production caches remain planned. No general
+performance advantage over discord.py is claimed.
+
+- [Source ZIP](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.4.0/yl-discord.cpp-v0.4.0.zip)
+- [Source TAR.GZ](https://github.com/Cavanshirpro/yl-discord.cpp/releases/download/v0.4.0/yl-discord.cpp-v0.4.0.tar.gz)
+- [Files guide](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.4.0/docs/FILES.md)
+- [Upload example](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.4.0/examples/upload_bot.cpp)
+- [Live setup](https://github.com/Cavanshirpro/yl-discord.cpp/blob/v0.4.0/docs/LIVE_BOTS.md)
 
 Licensed under **LGPL-3.0-or-later**.

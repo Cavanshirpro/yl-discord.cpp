@@ -1,4 +1,4 @@
-# API reference — v0.3.0
+# API reference — v0.4.0
 
 Include `<yl/discord.hpp>` and use namespace `yl::discord`. Generated headers
 come from CMake; link the `yl::discord` target. The testing transport has a

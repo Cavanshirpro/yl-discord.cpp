@@ -24,6 +24,7 @@ v0.1.0 is marked as a prerelease because it was an offline foundation. v0.1.1 co
 and is published as a normal GitHub release.
 v0.2.0 adds the command toolkit and message operations as a normal minor release.
 v0.3.0 extends event control, rich messages and mention policy; rebuild its consumers.
+v0.4.0 adds buffered multipart uploads and attachment models; rebuild its consumers.
 
 For a later release, prepare completed Markdown notes mentioning the new tag:
 

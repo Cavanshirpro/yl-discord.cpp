@@ -1,6 +1,6 @@
 # Live bot setup
 
-v0.3.0 supports bot-token login, Gateway API v10, messages and REST replies.
+v0.4.0 supports bot-token login, Gateway API v10, messages and REST replies.
 Create a Discord application/bot in the Developer Portal and install it in your
 test server with permission to view the channel, send messages and read history
 for replies. Enable Message Content Intent on its Bot page for guild prefix
