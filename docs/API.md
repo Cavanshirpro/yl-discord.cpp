@@ -23,6 +23,8 @@ transport. Null custom transport is rejected. Copying is disabled.
 | `listen_message(handler)` | Add a `task<>(Message)` callback; returns Client& |
 | `listen_ready(handler)` | Add a `task<>(Ready)` callback |
 | `listen_raw(handler)` | Add a `task<>(RawEvent)` callback |
+| `subscribe_message/ready/raw(handler)` | Return an explicit ListenerConnection |
+| `wait_for<Event>(timeout, predicate, stop_token)` | Await a future Message, Ready or RawEvent |
 | `dispatch(Message/Ready/RawEvent)` | Thread-safe queued event ingress |
 | `run()` | Drain work/timers; throw first unhandled error after draining |
 | `run(bot_token)` | Start the Gateway and run until close/fatal failure |
@@ -50,7 +52,7 @@ hook also throws, its failure is retained rather than recursively reported.
 `TaskError` has `source` and `std::exception_ptr exception`. Sources currently
 identify an event hook/listener, `commands`, or the caller-provided spawn label.
 Command errors can first be handled with Bot::on_command_error(Context, exception_ptr).
-Listener removal is not implemented.
+ListenerConnection supports explicit disconnect; see the [event guide](EVENTS.md).
 In a live session, an unhandled event/command error is logged immediately and
 retained until `run()` drains after shutdown. Override `on_error()` to handle it
 or call `close()` there for fail-fast behavior.
@@ -192,6 +194,6 @@ sessions re-identify after a randomized protocol delay. Compression/sharding
 are not implemented. Raw events contain the full dispatch JSON envelope. Resume
 does not synthesize Ready; repeated sequence numbers are ignored.
 
-`close()` cancels network work, not application-owned timers, signals or unrelated
+`close()` cancels network work and event waits, not application-owned timers, signals or unrelated
 tasks. Cancel those yourself. Network cancellation during close is not an
 unhandled task error. `stop()` retains pause/resume semantics. See [live setup](LIVE_BOTS.md).

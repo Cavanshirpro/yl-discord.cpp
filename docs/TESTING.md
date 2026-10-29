@@ -29,6 +29,13 @@ custom transport compatibility. The message network scenario checks fetch/edit/
 delete, mention suppression on edits, encoded Unicode/custom reactions, 204 empty
 responses, reaction 429 retries, malformed response diagnostics, 403 and 404.
 
+The event suite verifies removable listener ownership, weak/stale handles,
+filtered broadcast, Message binding, Ready/RawEvent waits, predicate release,
+deadlines, pre-requested/cross-thread stop tokens, native Asio cancellation,
+close cancellation, predicate errors, completion races, paused destruction and
+expiry, registry mutation during predicates, foreign-executor rejection and
+unstarted-task cleanup.
+
 `tests/consumer` links/runs against the installed CMake package. Conan's
 `test_package` checks an actual command/reply through the installed dependency.
 CI also relocates CMake installation prefixes and tests shared/static builds.

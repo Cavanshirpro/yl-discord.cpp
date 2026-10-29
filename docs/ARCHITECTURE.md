@@ -41,7 +41,7 @@ No C++ thread is created per command/request by the library.
 - Hooks, listeners and commands are independent; completion order is unspecified.
 - `on_message()` overrides do not disable commands. Bot messages reach listeners
   but do not invoke commands. Unknown names are ignored.
-- `close()` cancels network work; application timers/signals remain caller-owned.
+- `close()` cancels network work and event waits; application timers/signals remain caller-owned.
   `stop()` pauses the loop and allows another `run()` to resume pending work.
 - Destroying Client discards remaining Asio work. Do not run the loop in destructors.
 - Blocking I/O/CPU work still blocks the loop; queue bounds/backpressure are planned.
@@ -74,3 +74,10 @@ Command invocation snapshots global checks and retains its registry entry throug
 all awaits. Checks run before monotonic cooldown admission, which runs before the
 callback. Error hooks receive the original invocation Context. Message edits return
 new snapshots, while MemoryTransport stores only unbound snapshots to avoid cycles.
+
+Event waits retain only their own timer/predicate and a shared event-source state.
+Registries retain weak wait references, so timeout/cancellation destroys predicate
+captures without a Client ownership cycle. Listener handles are weak, explicit
+connections; snapshots keep running callbacks alive after disconnection. Stop-token
+requests from other threads are posted to the wait executor. All event registries
+still belong to one Client event loop; there is no automatic event history.

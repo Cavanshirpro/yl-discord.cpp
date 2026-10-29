@@ -64,6 +64,7 @@ lazy: await or spawn them. Blocking I/O and CPU work still block the event loop.
 - Nonblocking HTTP, verified TLS, request deadlines and asynchronous bucket/global limits.
 - Network shutdown that interrupts transfers, handshakes and rate-limit waiting.
 - Raw dispatch events, low-level authenticated REST and Asio executor access.
+- Predicate-based event waits with deadlines/cancellation and removable listener subscriptions.
 - MemoryTransport plus local HTTP/WebSocket fixtures for token-free tests.
 - Static/shared libraries, installed CMake targets, Conan, vcpkg overlays and MSYS2 assets.
 

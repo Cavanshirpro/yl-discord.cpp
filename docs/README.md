@@ -12,6 +12,7 @@ to the live REST/Gateway core.
 | [API](API.md) | Public classes, methods and coroutine behavior |
 | [Commands](COMMANDS.md) | Typed parameters, checks, cooldowns, help and Cog removal |
 | [Messages](MESSAGES.md) | Fetch, edit, delete, reactions and offline fixtures |
+| [Events](EVENTS.md) | Removable listeners, predicate waits, deadlines and cancellation |
 | [Architecture](ARCHITECTURE.md) | Runtime, ownership, threading and extension points |
 | [Examples](../examples/README.md) | Function-based commands and class-based bots/Cogs |
 | [Testing](TESTING.md) | Core, package consumer and publication checks |

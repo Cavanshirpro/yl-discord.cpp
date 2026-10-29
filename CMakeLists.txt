@@ -6,7 +6,7 @@ file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" YL_DISCORD_VERSION LIMIT_COUN
 project(yl_discord VERSION ${YL_DISCORD_VERSION} DESCRIPTION "Coroutine-first Discord bot library"
     HOMEPAGE_URL "https://github.com/Cavanshirpro/yl-discord.cpp" LANGUAGES CXX)
 
-option(YL_DISCORD_BUILD_EXAMPLES "Build offline examples" ${PROJECT_IS_TOP_LEVEL})
+option(YL_DISCORD_BUILD_EXAMPLES "Build offline and live examples" ${PROJECT_IS_TOP_LEVEL})
 option(YL_DISCORD_BUILD_TESTS "Build offline tests" ${PROJECT_IS_TOP_LEVEL})
 option(YL_DISCORD_FETCH_ASIO "Download pinned Asio if it is not installed" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
@@ -30,7 +30,7 @@ if(NOT TARGET asio::asio)
 endif()
 
 configure_file(include/yl/discord/version.hpp.in generated/yl/discord/version.hpp @ONLY)
-add_library(yl_discord src/client.cpp src/commands.cpp src/models.cpp src/transport.cpp src/memory_transport.cpp
+add_library(yl_discord src/client.cpp src/commands.cpp src/models.cpp src/transport.cpp src/events.cpp src/memory_transport.cpp
     src/curl_engine.cpp src/rest.cpp src/gateway.cpp src/protocol.cpp)
 add_library(yl::discord ALIAS yl_discord)
 set_target_properties(yl_discord PROPERTIES EXPORT_NAME discord
@@ -102,7 +102,7 @@ else()
 endif()
 
 if(YL_DISCORD_BUILD_EXAMPLES)
-    foreach(example IN ITEMS offline_bot class_bot ping_bot command_bot)
+    foreach(example IN ITEMS offline_bot class_bot ping_bot command_bot wait_for_bot)
         add_executable(yl_${example} examples/${example}.cpp)
         target_link_libraries(yl_${example} PRIVATE yl::discord)
     endforeach()
@@ -118,6 +118,10 @@ if(YL_DISCORD_BUILD_TESTS)
     target_link_libraries(yl_discord_command_tests PRIVATE yl::discord)
     add_test(NAME yl_discord_commands COMMAND yl_discord_command_tests)
     set_tests_properties(yl_discord_commands PROPERTIES TIMEOUT 30)
+    add_executable(yl_discord_event_tests tests/events.cpp)
+    target_link_libraries(yl_discord_event_tests PRIVATE yl::discord)
+    add_test(NAME yl_discord_events COMMAND yl_discord_event_tests)
+    set_tests_properties(yl_discord_events PROPERTIES TIMEOUT 30)
     find_package(Python3 3.10 COMPONENTS Interpreter REQUIRED)
     add_executable(yl_discord_network_tests tests/network.cpp)
     target_link_libraries(yl_discord_network_tests PRIVATE yl::discord)

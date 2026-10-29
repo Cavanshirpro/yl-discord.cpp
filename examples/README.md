@@ -11,18 +11,21 @@ Build with the [project instructions](../docs/BUILDING.md).
   error hook. Makes no network calls.
 - [command_bot.cpp](command_bot.cpp): typed and optional arguments, cooldowns,
   local checks, help and an asynchronous command-error hook. Makes no network calls.
+- [wait_for_bot.cpp](wait_for_bot.cpp): predicate-based confirmation, deadlines
+  and a removable observation listener. Makes no network calls.
 
 ```sh
 ./build/default/yl_offline_bot
 ./build/default/yl_class_bot
 ./build/default/yl_command_bot
+./build/default/yl_wait_for_bot
 # Set DISCORD_BOT_TOKEN before intentionally running:
 ./build/default/yl_ping_bot
 ```
 
 On Windows add `.exe`; for the PowerShell preset use `mingw64` instead of
 `default` and keep its runtime on PATH. CI compiles all examples, runs only the
-three offline examples and uses loopback fixtures for network tests.
+four offline examples and uses loopback fixtures for network tests.
 
 The [API](../docs/API.md) explains task ownership and the distinction between
 `close()` (network shutdown) and `stop()` (event-loop pause).

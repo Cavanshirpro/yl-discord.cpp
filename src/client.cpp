@@ -28,14 +28,6 @@ task<> invoke_hook(Client* client, task<> (Client::*hook)(Event), Event event) {
     co_await (client->*hook)(std::move(event));
 }
 
-template <typename Handler>
-std::shared_ptr<Handler> checked_handler(Handler handler) {
-    if (!handler) {
-        throw std::invalid_argument("Event handler cannot be empty");
-    }
-    return std::make_shared<Handler>(std::move(handler));
-}
-
 } // namespace
 
 Client::Client(ClientOptions options) : options_(std::move(options)) {
@@ -56,31 +48,39 @@ Client::Client(std::shared_ptr<MessageTransport> transport, ClientOptions option
 Client::~Client() { io_.stop(); }
 
 Client& Client::listen_message(MessageHandler handler) {
-    message_handlers_.push_back(checked_handler(std::move(handler)));
+    (void)subscribe_message(std::move(handler));
     return *this;
 }
 
 Client& Client::listen_ready(ReadyHandler handler) {
-    ready_handlers_.push_back(checked_handler(std::move(handler)));
+    (void)subscribe_ready(std::move(handler));
     return *this;
 }
 
 Client& Client::listen_raw(RawHandler handler) {
-    raw_handlers_.push_back(checked_handler(std::move(handler)));
+    (void)subscribe_raw(std::move(handler));
     return *this;
 }
+
+ListenerConnection Client::subscribe_message(MessageHandler handler) { return message_handlers_->subscribe(std::move(handler)); }
+ListenerConnection Client::subscribe_ready(ReadyHandler handler) { return ready_handlers_->subscribe(std::move(handler)); }
+ListenerConnection Client::subscribe_raw(RawHandler handler) { return raw_handlers_->subscribe(std::move(handler)); }
 
 void Client::dispatch(Message message) {
     asio::post(io_, [this, message = std::move(message)]() mutable {
         message.transport_ = transport_;
+        const auto handlers = message_handlers_->snapshot();
+        message_handlers_->publish(message);
+        for (const auto& handler : handlers) spawn(invoke(handler, message), "message listener");
         handle_message(std::move(message));
     });
 }
 
 void Client::dispatch(Ready event) {
     asio::post(io_, [this, event = std::move(event)] {
+        const auto handlers = ready_handlers_->snapshot();
+        ready_handlers_->publish(event);
         spawn(invoke_hook(this, &Client::on_ready, event), "on_ready");
-        const auto handlers = ready_handlers_;
         for (const auto& handler : handlers) {
             spawn(invoke(handler, event), "ready listener");
         }
@@ -89,8 +89,9 @@ void Client::dispatch(Ready event) {
 
 void Client::dispatch(RawEvent event) {
     asio::post(io_, [this, event = std::move(event)] {
+        const auto handlers = raw_handlers_->snapshot();
+        raw_handlers_->publish(event);
         spawn(invoke_hook(this, &Client::on_raw_event, event), "on_raw_event:" + event.name);
-        const auto handlers = raw_handlers_;
         for (const auto& handler : handlers) {
             spawn(invoke(handler, event), "raw listener:" + event.name);
         }
@@ -99,10 +100,6 @@ void Client::dispatch(RawEvent event) {
 
 void Client::handle_message(Message message) {
     spawn(invoke_hook(this, &Client::on_message, message), "on_message");
-    const auto handlers = message_handlers_;
-    for (const auto& handler : handlers) {
-        spawn(invoke(handler, message), "message listener");
-    }
 }
 
 void Client::spawn(task<> work, std::string source) {
@@ -161,7 +158,11 @@ task<> Client::start(std::string token) {
     return run_connection(connection_, std::move(token));
 }
 void Client::close() {
-    asio::post(io_, [this] { closing_ = true; if (connection_) connection_->stop(); });
+    asio::post(io_, [this] {
+        closing_ = true;
+        message_handlers_->cancel_waits(); ready_handlers_->cancel_waits(); raw_handlers_->cancel_waits();
+        if (connection_) connection_->stop();
+    });
 }
 RestClient& Client::rest() {
     if (!connection_) throw std::logic_error("This Client has a custom transport");

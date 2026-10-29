@@ -45,7 +45,8 @@ Portal. Compression and generic task-group cancellation remain future work.
 ## Advanced control
 
 - [ ] Cache budgets, opt-out, TTL and eviction policy.
-- [ ] Predicate-based `wait_for<Event>()` with cancellation/deadlines.
+- [x] Predicate-based `wait_for<Event>()` with cancellation/deadlines.
+- [x] Removable Message/Ready/RawEvent subscriptions with in-flight ownership.
 - [ ] Event/command hooks and optional middleware.
 - [ ] REST latency, heartbeat and rate-limit queue metrics.
 - [ ] Low-level REST/Gateway access using the same safeguards.

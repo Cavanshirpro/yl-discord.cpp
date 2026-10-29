@@ -5,6 +5,7 @@
 
 #include <yl/discord/transport.hpp>
 #include <yl/discord/network.hpp>
+#include <yl/discord/events.hpp>
 #include <asio/any_io_executor.hpp>
 #include <asio/io_context.hpp>
 #include <exception>
@@ -42,6 +43,20 @@ public:
     Client& listen_message(MessageHandler handler);
     Client& listen_ready(ReadyHandler handler);
     Client& listen_raw(RawHandler handler);
+    [[nodiscard]] ListenerConnection subscribe_message(MessageHandler handler);
+    [[nodiscard]] ListenerConnection subscribe_ready(ReadyHandler handler);
+    [[nodiscard]] ListenerConnection subscribe_raw(RawHandler handler);
+    template <typename Event>
+    [[nodiscard]] task<Event> wait_for(std::chrono::steady_clock::duration timeout = std::chrono::seconds(30),
+                                     std::function<bool(const Event&)> predicate = {}, std::stop_token token = {}) {
+        if constexpr (std::same_as<Event, Message>)
+            return detail::wait_event(message_handlers_, executor(), timeout, std::move(predicate), token);
+        else if constexpr (std::same_as<Event, Ready>)
+            return detail::wait_event(ready_handlers_, executor(), timeout, std::move(predicate), token);
+        else if constexpr (std::same_as<Event, RawEvent>)
+            return detail::wait_event(raw_handlers_, executor(), timeout, std::move(predicate), token);
+        else static_assert(!sizeof(Event), "wait_for supports Message, Ready and RawEvent");
+    }
 
     // Thread-safe ingress used by the Gateway and offline test transports.
     void dispatch(Message message);
@@ -88,9 +103,9 @@ private:
     std::shared_ptr<MessageTransport> transport_;
     std::shared_ptr<detail::Connection> connection_;
     ClientOptions options_;
-    std::vector<std::shared_ptr<MessageHandler>> message_handlers_;
-    std::vector<std::shared_ptr<ReadyHandler>> ready_handlers_;
-    std::vector<std::shared_ptr<RawHandler>> raw_handlers_;
+    std::shared_ptr<detail::EventSource<Message>> message_handlers_ = std::make_shared<detail::EventSource<Message>>();
+    std::shared_ptr<detail::EventSource<Ready>> ready_handlers_ = std::make_shared<detail::EventSource<Ready>>();
+    std::shared_ptr<detail::EventSource<RawEvent>> raw_handlers_ = std::make_shared<detail::EventSource<RawEvent>>();
     std::vector<TaskError> errors_;
     bool running_ = false;
     bool closing_ = false;

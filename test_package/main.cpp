@@ -12,10 +12,20 @@
 #include <yl/discord/testing/memory_transport.hpp>
 #include <iostream>
 
+yl::discord::task<> wait_for_probe(yl::discord::Client& client, bool& observed) {
+    auto message = co_await client.wait_for<yl::discord::Message>(std::chrono::seconds(1),
+        [](const yl::discord::Message& event) { return event.content == "!p 42"; });
+    observed = message.channel_id == yl::discord::Snowflake{42};
+}
+
 int main() {
     using namespace yl::discord;
     auto transport = std::make_shared<testing::MemoryTransport>();
     Bot bot{transport};
+    bool observed = false;
+    int listeners = 0;
+    auto listener = bot.subscribe_message([&](Message) -> task<> { ++listeners; co_return; });
+    bot.spawn(wait_for_probe(bot, observed));
     // Exercise the public payload across the ABI with Win32 Unicode macros active.
     bot.spawn(transport->send_message(MessageRequest{Snowflake{42}, "transport probe", std::nullopt}));
     bot.command<int>("ping", [](Context ctx, int value) -> task<> {
@@ -33,13 +43,14 @@ int main() {
     message.content = "!p 42";
     bot.dispatch(std::move(message));
     bot.run();
+    listener.disconnect();
     bool replied = false;
     bool probed = false;
     for (const auto& request : transport->sent()) {
         replied = replied || (request.content == "Pong 42!" && request.reply_to == Snowflake{100});
         probed = probed || (request.content == "transport probe" && !request.reply_to);
     }
-    if (transport->sent().size() != 2 || transport->actions().size() != 5 || !replied || !probed) {
+    if (transport->sent().size() != 2 || transport->actions().size() != 5 || !replied || !probed || !observed || listeners != 1 || listener.connected()) {
         return 1;
     }
     std::cout << "yl-discord.cpp " << version << ": installed package works\n";
